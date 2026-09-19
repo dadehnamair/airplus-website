@@ -31,17 +31,20 @@ export function makePuffAtlas() {
       for (let px = 0; px < T; px++) {
         const nx = (px / T) * 2 - 1, ny = (py / T) * 2 - 1;
         let r = Math.sqrt(nx * nx + ny * ny);
-        r += (warp(nx * 1.6 + 5, ny * 1.6 + 5) - 0.5) * 0.42;
-        const fall = 1 - Math.min(1, Math.max(0, (r - 0.32) / 0.68));
+        // دو لایه واپیچش با فرکانس متفاوت: لبه‌ای نامنظم و کلوچه‌ای به‌جای دایره صاف
+        r += (warp(nx * 1.6 + 5, ny * 1.6 + 5) - 0.5) * 0.46;
+        r += (warp(nx * 3.7 + 50, ny * 3.7 + 50) - 0.5) * 0.24;
+        const fall = 1 - Math.min(1, Math.max(0, (r - 0.3) / 0.66));
         const f = fall * fall * (3 - 2 * fall);
         let n = 0, amp = 0.55, fr = 2.4, sum = 0;
-        for (let o = 0; o < 4; o++) { n += noise(nx * fr + tile * 3.1, ny * fr + tile * 1.7) * amp; sum += amp; amp *= 0.5; fr *= 2.1; }
+        for (let o = 0; o < 5; o++) { n += noise(nx * fr + tile * 3.1, ny * fr + tile * 1.7) * amp; sum += amp; amp *= 0.5; fr *= 2.15; }
         n /= sum;
-        let dens = f * (0.5 + 1.0 * n) - 0.2;
-        let a = Math.min(1, Math.max(0, dens * 1.9));
+        let dens = f * (0.42 + 1.1 * n) - 0.15;
+        let a = Math.min(1, Math.max(0, dens * 2.0));
         a = a * a * (3 - 2 * a);
-        const top = Math.min(1, Math.max(0, 0.5 - ny * 0.55 + (n - 0.5) * 0.6));
-        const lum = (0.6 + 0.4 * top) * (0.78 + 0.22 * n);
+        // کنتراست نور بیشتر: بالای پاف روشن و برجسته، زیرش سایه‌دارتر برای حس حجم
+        const top = Math.min(1, Math.max(0, 0.5 - ny * 0.62 + (n - 0.5) * 0.7));
+        const lum = (0.46 + 0.54 * top) * (0.68 + 0.32 * n);
         const i = (py * T + px) * 4;
         const v = Math.min(255, lum * 255);
         img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = a * 255;
@@ -163,10 +166,13 @@ export function createCloudField({ atlas, curve, L, rand, banks = [], runwayT = 
 
   function cluster(cx, cy, cz, r, count, sizeMul = 1, flat = 0.7, toneBoost = 0) {
     for (let k = 0; k < count; k++) {
+      // کف صاف و سر کلوچه‌ای مثل کومولوس واقعی: پاف‌های زیر مرکز جمع‌وجورتر، بالای مرکز پخش‌تر و بزرگ‌تر
+      const gy = gauss();
+      const gyBiased = gy >= 0 ? gy * 1.3 : gy * 0.5;
       const x = cx + gauss() * r * 1.0;
-      const y = cy + gauss() * r * flat * 0.55;
+      const y = cy + gyBiased * r * flat * 0.55;
       const z = cz + gauss() * r * 1.0;
-      const size = r * (0.85 + rand() * 1.0) * sizeMul;
+      const size = r * (0.85 + rand() * 1.0) * sizeMul * (gy >= 0 ? 1 + gy * 0.22 : 1 + gy * 0.12);
       const rel = (y - cy) / (r * flat * 0.6 + 0.001);
       const tone = Math.min(1, Math.max(0.35, 0.68 + rel * 0.28 + (rand() - 0.5) * 0.18 + toneBoost));
       list.push({ x, y, z, size, rot: rand() * 6.283, tile: Math.floor(rand() * 4), tone });
