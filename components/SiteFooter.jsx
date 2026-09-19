@@ -67,6 +67,10 @@ export default function SiteFooter({ content }) {
         <a href="https://sketchfab.com/fDlruosne" target="_blank" rel="noopener noreferrer">Dlourine</a>{' '}
         (<a href="https://sketchfab.com/3d-models/airbus-a320-200-v2-c078f9af15884a6b820c7e778831b110" target="_blank" rel="noopener noreferrer">Sketchfab</a>)
         با مجوز <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>؛ با تغییر رنگ و ساده‌سازی برای این سایت.
+        {' '}مدل سه‌بعدی فرودگاه: «Airport City Scene with Aeroplane Runway Track» اثر{' '}
+        <a href="https://sketchfab.com/mortalityrexotable" target="_blank" rel="noopener noreferrer">golukumar</a>{' '}
+        (<a href="https://sketchfab.com/3d-models/airport-city-scene-with-aeroplane-runway-track-dac0622298b94c7d9673047f2d86803b" target="_blank" rel="noopener noreferrer">Sketchfab</a>)
+        با مجوز خریداری‌شده؛ با حذف اشیای زائد و مقیاس‌دهی برای این سایت.
       </p>
     </footer>
   );
