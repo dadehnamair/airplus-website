@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { makePuffAtlas, createPuffSystem, createCloudField } from './scene/clouds';
 import { createPlane } from './scene/plane';
+import { createAirport } from './scene/airport';
 import { createAudio } from './scene/audio';
 import { sectionRange } from '@/lib/layout';
 
@@ -305,13 +306,44 @@ export function startFlight(root, content, opts = {}) {
       }
     }
   }
+  const AIRPORT_SCALE = 0.6, AIRPORT_LAT = 80;
+  let airportPlacement = null, airportLoadAt = -1;
   sections.forEach((s, i) => {
     if (s.type !== 'content') return;
     const r = sectionRange(i, N);
     const a = r.a < 0 ? r.start : r.a, b = r.b > 1 ? r.end : r.b;
     if (s.scene === 'tickets' && s.tickets && s.tickets.length) addTickets(s.tickets, tc(a + AHEAD), tc(b + AHEAD * 0.6));
     if (s.scene === 'towers') addTowers(tc(a + AHEAD * 0.6), tc(b + AHEAD));
+    if (s.scene === 'airport') {
+      // کمی جلوتر از وسط بخش تا وقتی متن کاملاً دیده می‌شود، مدل هم جلوی دوربین باشد نه کنار آن
+      frame3(tc(r.mid + 130 / L));
+      airportPlacement = { x: tmpP.x + sideV.x * AIRPORT_LAT, z: tmpP.z + sideV.z * AIRPORT_LAT, rotY: Math.atan2(-tmpT.x, -tmpT.z) };
+      airportLoadAt = Math.max(0, r.mid - 0.15);
+    }
   });
+  // اگر بخش فرود آن را خواسته، مدل کمی جلوتر از نقطه‌ی پایانی مسیر می‌نشیند (همان‌جا که دوربین در پایان پرواز به آن نگاه می‌کند)
+  const ctaSection = sections.find((s) => s.type === 'cta');
+  if (ctaSection && ctaSection.scene === 'airport') {
+    frame3(1);
+    const forwardOffset = 220;
+    airportPlacement = {
+      x: tmpP.x + tmpT.x * forwardOffset + sideV.x * AIRPORT_LAT,
+      z: tmpP.z + tmpT.z * forwardOffset + sideV.z * AIRPORT_LAT,
+      rotY: Math.atan2(-tmpT.x, -tmpT.z),
+    };
+    airportLoadAt = Math.max(0, 1 - 200 / L);
+  }
+
+  // مدل فرودگاه: فایلی سنگین است، فقط وقتی یکی از بخش‌ها آن را انتخاب کرده لود می‌شود
+  // و فقط وقتی هواپیما به آن نزدیک می‌شود (نه در بارگذاری اولیه صفحه)
+  const airport = createAirport({ scale: AIRPORT_SCALE });
+  scene.add(airport.group);
+  let airportLoadStart = -1, airportLoadTriggered = false;
+  if (airportPlacement) {
+    airportLoadStart = airportLoadAt;
+    airport.group.position.set(airportPlacement.x, 0, airportPlacement.z);
+    airport.group.rotation.y = airportPlacement.rotY;
+  }
 
   // باند فرود
   frame3(runwayT); const zStart = tmpP.z, zEnd = zStart - 900;
@@ -411,6 +443,10 @@ export function startFlight(root, content, opts = {}) {
   const sunCol = new THREE.Color();
 
   function update(p, time, dt) {
+    if (!airportLoadTriggered && airportLoadStart >= 0 && p > airportLoadStart) {
+      airportLoadTriggered = true;
+      airport.load();
+    }
     /* موقعیت‌های پایه روی مسیر */
     const tp = Math.min(p + LEAD, 1);
     curve.getPointAt(tc(p), camPos);
@@ -623,7 +659,10 @@ export function startFlight(root, content, opts = {}) {
   disposers.push(() => {
     scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
-      if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { if (m.map) m.map.dispose(); if (m.emissiveMap) m.emissiveMap.dispose(); m.dispose(); });
+      if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+        ['map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'specularIntensityMap'].forEach((k) => { if (m[k]) m[k].dispose(); });
+        m.dispose();
+      });
     });
     clouds.dispose(); atlas.dispose(); renderer.dispose();
   });

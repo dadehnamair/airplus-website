@@ -13,7 +13,8 @@ const TYPES = {
   quotes: 'نظر مشتریان',
   cta: 'فرود و فرم درخواست',
 };
-const SCENES = { none: 'بدون شیء سه‌بعدی', tickets: 'بلیت‌های شناور', towers: 'ستون‌های گزارش' };
+const SCENES = { none: 'بدون شیء سه‌بعدی', tickets: 'بلیت‌های شناور', towers: 'ستون‌های گزارش', airport: 'فرودگاه (مدل سه‌بعدی)' };
+const CTA_SCENES = { none: 'بدون شیء سه‌بعدی', airport: 'فرودگاه (مدل سه‌بعدی) روی باند فرود' };
 
 const Ctx = createContext(null);
 const useForm = () => useContext(Ctx);
@@ -34,7 +35,7 @@ function newSection(type) {
     case 'steps': return { ...base, steps: [{ title: 'مرحله اول', desc: '' }, { title: 'مرحله دوم', desc: '' }] };
     case 'stats': return { ...base, items: [{ value: '۱۰۰+', label: 'عنوان آمار' }, { value: '۲۴', label: 'عنوان آمار' }] };
     case 'quotes': return { ...base, quotes: [{ text: '', author: '' }] };
-    default: return { ...base, cta: 'درخواست دمو', again: 'پرواز دوباره', formEnabled: true };
+    default: return { ...base, cta: 'درخواست دمو', again: 'پرواز دوباره', formEnabled: true, scene: 'none' };
   }
 }
 
@@ -207,6 +208,7 @@ function SectionEditor({ i }) {
               <Text label="متن دکمه بازگشت" path={P('again')} />
             </div>
             <Check label="فرم درخواست دمو نمایش داده شود (درخواست‌ها در تب «درخواست‌ها» ذخیره می‌شوند)" path={P('formEnabled')} />
+            <Select label="شیء سه‌بعدی روی باند فرود" path={P('scene')} options={CTA_SCENES} />
           </>
         )}
 

@@ -83,7 +83,8 @@
       "lead": "اطلاعاتتان را بگذارید تا برای یک جلسه دمو با شما تماس بگیریم.",
       "cta": "درخواست دمو",
       "again": "پرواز دوباره",
-      "formEnabled": true
+      "formEnabled": true,
+      "scene": "airport"
     }
   ],
   "footer": {
