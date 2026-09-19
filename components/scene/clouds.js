@@ -44,7 +44,7 @@ export function makePuffAtlas() {
         a = a * a * (3 - 2 * a);
         // کنتراست نور بیشتر: بالای پاف روشن و برجسته، زیرش سایه‌دارتر برای حس حجم
         const top = Math.min(1, Math.max(0, 0.5 - ny * 0.62 + (n - 0.5) * 0.7));
-        const lum = (0.46 + 0.54 * top) * (0.68 + 0.32 * n);
+        const lum = (0.62 + 0.38 * top) * (0.8 + 0.2 * n);
         const i = (py * T + px) * 4;
         const v = Math.min(255, lum * 255);
         img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = a * 255;
@@ -174,7 +174,7 @@ export function createCloudField({ atlas, curve, L, rand, banks = [], runwayT = 
       const z = cz + gauss() * r * 1.0;
       const size = r * (0.85 + rand() * 1.0) * sizeMul * (gy >= 0 ? 1 + gy * 0.22 : 1 + gy * 0.12);
       const rel = (y - cy) / (r * flat * 0.6 + 0.001);
-      const tone = Math.min(1, Math.max(0.35, 0.68 + rel * 0.28 + (rand() - 0.5) * 0.18 + toneBoost));
+      const tone = Math.min(1, Math.max(0.52, 0.74 + rel * 0.24 + (rand() - 0.5) * 0.16 + toneBoost));
       list.push({ x, y, z, size, rot: rand() * 6.283, tile: Math.floor(rand() * 4), tone });
     }
   }
