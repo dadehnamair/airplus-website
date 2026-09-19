@@ -261,20 +261,46 @@ export function startFlight(root, content, opts = {}) {
     });
   }
   const barGeo = new THREE.BoxGeometry(1, 1, 1); barGeo.translate(0, 0.5, 0);
-  const barMats = [
-    new THREE.MeshStandardMaterial({ color: 0xe4b817, roughness: 0.5, emissive: 0x342800 }),
-    new THREE.MeshStandardMaterial({ color: 0x6f10d3, roughness: 0.5, emissive: 0x1e0542 }),
-    new THREE.MeshStandardMaterial({ color: 0xf4f7ff, roughness: 0.5, emissive: 0x151a24 }),
-  ];
+  // بافت پنجره‌های ساختمان: یک شبکهٔ پنجرهٔ روشن/خاموش، به‌علاوه نسخهٔ emissive برای درخشش شب
+  function buildingWindowTex() {
+    const cols = 8, rows = 16, cw = 32, rh = 32, pad = 5;
+    const W = cols * cw, H = rows * rh;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const cx2 = cv.getContext('2d');
+    cx2.fillStyle = '#9aa1b3'; cx2.fillRect(0, 0, W, H);
+    const ecv = document.createElement('canvas'); ecv.width = W; ecv.height = H;
+    const ex = ecv.getContext('2d'); ex.fillStyle = '#000000'; ex.fillRect(0, 0, W, H);
+    for (let ry = 0; ry < rows; ry++) {
+      for (let rx = 0; rx < cols; rx++) {
+        const lit = Math.random() < 0.3;
+        cx2.fillStyle = lit ? '#3d4666' : '#20263a';
+        cx2.fillRect(rx * cw + pad, ry * rh + pad, cw - pad * 2, rh - pad * 2);
+        if (lit) { ex.fillStyle = '#ffdfa0'; ex.fillRect(rx * cw + pad, ry * rh + pad, cw - pad * 2, rh - pad * 2); }
+      }
+    }
+    const map = new THREE.CanvasTexture(cv); map.wrapS = map.wrapT = THREE.RepeatWrapping; map.anisotropy = aniso;
+    const emissiveMap = new THREE.CanvasTexture(ecv); emissiveMap.wrapS = emissiveMap.wrapT = THREE.RepeatWrapping; emissiveMap.anisotropy = aniso;
+    return { map, emissiveMap };
+  }
+  const { map: winMap, emissiveMap: winEmissive } = buildingWindowTex();
+  const buildingPalette = [0x2b3350, 0x39445e, 0x50597a, 0x2c4a52, 0x5b3f86, 0x8a8f9c];
   function addTowers(ta, tb) {
     const pairs = Math.max(10, Math.ceil(((tb - ta) * L) / 9));
     for (let k = 0; k < pairs; k++) {
       const t = ta + (k / pairs) * (tb - ta); frame3(t);
       for (let s = 0; s < 2; s++) {
         const sign = s ? 1 : -1, lat = sign * (13 + rand() * 32), w = 2.4 + rand() * 3.2, h = 8 + rand() * Math.max(10, tmpP.y - 10);
-        const b = new THREE.Mesh(barGeo, barMats[Math.floor(rand() * 3)]);
+        const map = winMap.clone(), emissiveMap = winEmissive.clone();
+        map.repeat.set(Math.max(1, Math.round(w / 3)), Math.max(2, Math.round(h / 4)));
+        emissiveMap.repeat.copy(map.repeat);
+        const mat = new THREE.MeshStandardMaterial({
+          map, emissiveMap, emissive: 0xffdfa0, emissiveIntensity: 0,
+          color: buildingPalette[Math.floor(rand() * buildingPalette.length)],
+          roughness: 0.75, metalness: 0.1,
+        });
+        const b = new THREE.Mesh(barGeo, mat);
         b.position.set(tmpP.x + sideV.x * lat, 0, tmpP.z + sideV.z * lat);
-        b.scale.set(w, 0.01, w); b.userData = { t: tc(t), h };
+        b.scale.set(w, 0.01, w); b.userData = { t: tc(t), h, mat };
         scene.add(b); bars.push(b);
       }
     }
@@ -500,7 +526,7 @@ export function startFlight(root, content, opts = {}) {
 
     /* بلیت‌های شناور، ستون‌ها، چراغ باند */
     for (let i = 0; i < cards.length; i++) { const cm = cards[i]; cm.position.y = cm.userData.by + (reduce ? 0 : Math.sin(time * 0.8 + cm.userData.ph) * 0.4); cm.rotation.z = reduce ? 0 : Math.sin(time * 0.6 + cm.userData.ph) * 0.03; }
-    for (let b = 0; b < bars.length; b++) { const u = bars[b].userData; bars[b].scale.y = Math.max(0.01, u.h * smooth(u.t - 150 / L, u.t - 40 / L, p)); }
+    for (let b = 0; b < bars.length; b++) { const u = bars[b].userData; bars[b].scale.y = Math.max(0.01, u.h * smooth(u.t - 150 / L, u.t - 40 / L, p)); u.mat.emissiveIntensity = star * 1.5; }
     for (let r = 0; r < runwayMats.length; r++) {
       const on2 = Math.max(0, 1 - Math.abs(((time * 1.6 + runwayMats[r].ph) % 3) - 1.5) / 1.5);
       runwayMats[r].mat.color.setRGB(0.89 + 0.11 * on2, 0.72 + 0.28 * on2, 0.09 + 0.91 * on2);
@@ -597,7 +623,7 @@ export function startFlight(root, content, opts = {}) {
   disposers.push(() => {
     scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
-      if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+      if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { if (m.map) m.map.dispose(); if (m.emissiveMap) m.emissiveMap.dispose(); m.dispose(); });
     });
     clouds.dispose(); atlas.dispose(); renderer.dispose();
   });
