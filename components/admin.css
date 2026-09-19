@@ -1,0 +1,58 @@
+.adm-page{--bg:#F1F4F9;--surface:#fff;--ink:#0F1B33;--muted:#55627D;--line:#D9DFEA;--sun:#e4b817;--err:#B42318;--ok:#12805C;
+  min-height:100vh;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.7;padding-bottom:110px}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .adm-page{--bg:#0A101D;--surface:#121B2E;--ink:#EAF0FB;--muted:#9AA8C2;--line:#24314D;--err:#F97066;--ok:#34D399}
+}
+.adm-page *{box-sizing:border-box}
+.adm-center{display:grid;place-items:center;padding:24px}
+.adm-box{width:min(400px,100%);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:30px;display:grid;gap:16px}
+.adm-box h1{font-size:1.3rem}
+.adm-top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px clamp(16px,4vw,40px);background:var(--surface);border-bottom:1px solid var(--line)}
+.adm-top h1{font-size:1.15rem}
+.adm-wrap{max-width:860px;margin:28px auto;padding:0 20px;display:grid;gap:22px}
+.adm-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;display:grid;gap:16px}
+.adm-card h2{font-size:1.1rem}
+.adm-field{display:grid;gap:6px}
+.adm-field>span{font-size:.88rem;font-weight:500;color:var(--muted)}
+.adm-field small{color:var(--muted);font-size:.78rem}
+.adm-page input,.adm-page textarea,.adm-page select{width:100%;font:inherit;color:inherit;background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:9px 12px}
+.adm-page input:focus,.adm-page textarea:focus,.adm-page select:focus{outline:3px solid rgba(228,184,23,.6);border-color:var(--ink)}
+.adm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.adm-row{display:flex;gap:8px;align-items:center}
+.adm-item{border:1.5px dashed var(--line);border-radius:14px;padding:12px 14px 14px;display:grid;gap:10px}
+.adm-item legend{padding:0 8px;font-size:.85rem;font-weight:700}
+.adm-btn{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 16px;font:inherit;font-weight:500;cursor:pointer;text-decoration:none}
+.adm-btn:hover:not(:disabled){border-color:var(--ink)}
+.adm-btn:disabled{opacity:.45;cursor:not-allowed}
+.adm-btn.small{padding:4px 12px;font-size:.85rem;width:max-content}
+.adm-btn.primary{background:var(--sun);border-color:var(--sun);color:#0F1B33;font-weight:700}
+.adm-btn.danger{color:var(--err)}
+.adm-error{color:var(--err);font-size:.9rem}
+.adm-save{position:fixed;inset-inline:0;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px clamp(16px,4vw,40px);background:var(--surface);border-top:1px solid var(--line)}
+.adm-msg{font-size:.9rem;color:var(--muted)}
+.adm-msg.ok{color:var(--ok)}
+.adm-msg.error{color:var(--err)}
+@media (max-width:640px){.adm-grid{grid-template-columns:1fr}}
+
+/* ---------- افزوده‌های پنل جدید ---------- */
+.adm-tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:4px}
+.adm-tabs button{border:0;background:transparent;color:var(--muted);padding:6px 18px;border-radius:10px;font:inherit;cursor:pointer}
+.adm-tabs button[aria-selected="true"]{background:var(--sun);color:#0F1B33;font-weight:700}
+.adm-muted{color:var(--muted);font-size:.88rem}
+.adm-warn{color:#B45309;font-size:.88rem;background:rgba(245,158,11,.12);border-radius:12px;padding:8px 12px}
+.adm-sec{border:1.5px solid var(--line);border-radius:16px;background:var(--bg)}
+.adm-sec>summary{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;list-style:none}
+.adm-sec>summary::-webkit-details-marker{display:none}
+.adm-sec>summary em{margin-inline-start:auto;font-style:normal;color:var(--muted);font-size:.82rem}
+.adm-no{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--sun);color:#0F1B33;font-weight:800;font-size:.85rem}
+.adm-sec[open]>summary{border-bottom:1px solid var(--line)}
+.adm-sec-body{padding:16px;display:grid;gap:14px}
+.adm-actions{padding-top:6px;flex-wrap:wrap}
+.adm-add{margin-top:6px}
+.adm-add select{width:auto;min-width:220px}
+.adm-check{display:flex;gap:10px;align-items:center;font-size:.9rem;cursor:pointer}
+.adm-check input{width:18px;height:18px}
+.adm-table-wrap{overflow-x:auto}
+.adm-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.adm-table th,.adm-table td{padding:10px 8px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+.adm-table th{color:var(--muted);font-weight:500;font-size:.8rem}
