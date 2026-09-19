@@ -2,12 +2,9 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 /*
-  هواپیما: مدل Airbus A320-200 (فایل public/models/a320.glb) با رنگ سازمانی.
-  اگر فایل لود نشد، یک مدل ساده‌ی ساخته‌شده با کد جایگزین می‌شود تا سایت خراب نشود.
-  جهت مدل: بینی به سمت +Z، بالا +Y، طول ≈ ۹ واحد، مبدأ روی محور بدنه و وسط طول.
+  هواپیما: مدل Airbus A320-200 (فایل public/models/a320.glb) با رنگ سازمانی و لوگوی اختصاصی.
 */
 
-// نقاط مرجع روی مدل A320 (با همان مقیاس مدل)
 const GLB_POS = {
   navL: [-4.28, 0.7, -1.1],
   navR: [4.2, 0.7, -1.1],
@@ -18,7 +15,7 @@ const GLB_POS = {
     [1.316, -0.478, 0.5],
   ],
 };
-const S = 1.15; // مدل جایگزین کمی بزرگ‌تر ساخته شده بود
+const S = 1.15;
 const PROC_POS = {
   navL: [-4.3 * S, 0.06 * S, -1.3 * S],
   navR: [4.3 * S, 0.06 * S, -1.3 * S],
@@ -43,7 +40,6 @@ function glowTexture() {
   return new THREE.CanvasTexture(c);
 }
 
-// ساخت پره/بال از روی چندضلعی: نقاط به‌صورت [x, z] در صفحه افقی
 function flatSurface(points, thickness, side) {
   const pts = points.map(([x, z]) => [x * side, z]);
   if (side < 0) pts.reverse();
@@ -59,8 +55,21 @@ function flatSurface(points, thickness, side) {
   return geo;
 }
 
-/* مدل جایگزین (فقط اگر فایل GLB لود نشود) */
-function buildProcedural(root) {
+/* ساخت دکال/صفحه برای نمایش لوگو روی مدل جایگزین */
+function createLogoPlane(texture) {
+  const geo = new THREE.PlaneGeometry(0.7, 0.6); // ابعاد لوگو (عرض و ارتفاع)
+  const mat = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1, // جلوگیری از پرپر زدن روی سطح دم (Z-fighting)
+  });
+  return new THREE.Mesh(geo, mat);
+}
+
+/* مدل جایگزین (کدنویسی‌شده) */
+function buildProcedural(root, logoTexture) {
   const white = new THREE.MeshStandardMaterial({
     color: 0xf2f5fa,
     roughness: 0.3,
@@ -96,6 +105,7 @@ function buildProcedural(root) {
     roughness: 0.45,
     metalness: 0.2,
   });
+
   const prof = [
     [0.02, -4.3],
     [0.16, -4.1],
@@ -110,9 +120,11 @@ function buildProcedural(root) {
     [0.12, 4.25],
     [0.0, 4.32],
   ].map(([r, y]) => new THREE.Vector2(r, y));
+
   const fus = new THREE.Mesh(new THREE.LatheGeometry(prof, 32), white);
   fus.rotation.x = Math.PI / 2;
   root.add(fus);
+
   [Math.PI / 2 - 0.15, -Math.PI / 2 - 0.15].forEach((start) => {
     const g = new THREE.CylinderGeometry(
       0.566,
@@ -129,6 +141,7 @@ function buildProcedural(root) {
     m.position.z = 0.75;
     root.add(m);
   });
+
   [-1, 1].forEach((s) => {
     const wing = new THREE.Mesh(
       flatSurface(
@@ -146,6 +159,7 @@ function buildProcedural(root) {
     wing.position.y = -0.24;
     wing.rotation.z = s * 0.7;
     root.add(wing);
+
     const nac = [
       [0.0, -0.75],
       [0.26, -0.7],
@@ -158,6 +172,7 @@ function buildProcedural(root) {
     eng.rotation.x = Math.PI / 2;
     eng.position.set(s * 1.6, -0.52, 0.55);
     root.add(eng);
+
     const tail = new THREE.Mesh(
       flatSurface(
         [
@@ -175,6 +190,7 @@ function buildProcedural(root) {
     tail.rotation.z = s * 0.05;
     root.add(tail);
   });
+
   const finShape = new THREE.Shape();
   [
     [3.0, 0.25],
@@ -190,6 +206,20 @@ function buildProcedural(root) {
   finGeo.rotateY(Math.PI / 2);
   finGeo.translate(-0.035, 0, 0);
   root.add(new THREE.Mesh(finGeo, brand));
+
+  // --- افزودن لوگو روی هر دو طرف دم بالایی (Procedural Tail) ---
+  if (logoTexture) {
+    const logoR = createLogoPlane(logoTexture);
+    logoR.position.set(0.045, 1.15, -3.85); // سمت راست دم
+    logoR.rotation.y = Math.PI / 2;
+    root.add(logoR);
+
+    const logoL = createLogoPlane(logoTexture);
+    logoL.position.set(-0.045, 1.15, -3.85); // سمت چپ دم
+    logoL.rotation.y = -Math.PI / 2;
+    root.add(logoL);
+  }
+
   const wind = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.07, 0.34), dark);
   wind.position.set(0, 0.3, 3.35);
   wind.rotation.x = -0.42;
@@ -199,15 +229,23 @@ function buildProcedural(root) {
 
 export function createPlane(opts = {}) {
   const url = opts.url || "/models/a320.glb";
+
+  // مسیر فایل لوگو از پوشه public (نام پسوند فایل مثل png را تنظیم کنید)
+  const logoUrl = opts.logoUrl || "/icon/icon-128.png";
+
   const rig = new THREE.Group();
   const body = new THREE.Group();
   rig.add(body);
 
+  // بارگذاری تکسچر لوگو
+  const textureLoader = new THREE.TextureLoader();
+  const logoTexture = textureLoader.load(logoUrl);
+
   const proc = new THREE.Group();
-  buildProcedural(proc);
+  buildProcedural(proc, logoTexture);
   body.add(proc);
 
-  /* چراغ‌ها: هسته‌ی کوچک + هاله‌ی درخشان */
+  /* چراغ‌ها */
   const tex = glowTexture();
   const mkLight = (color, size) => {
     const g = new THREE.Group();
@@ -236,6 +274,7 @@ export function createPlane(opts = {}) {
     navR = mkLight(0x00a946, 0.42),
     strobe = mkLight(0xffffff, 0.8),
     beacon = mkLight(0xff2a2a, 0.5);
+
   const place = (P) => {
     navL.position.set(...P.navL);
     navR.position.set(...P.navR);
@@ -251,7 +290,7 @@ export function createPlane(opts = {}) {
   light.position.set(0, 2.5, -1);
   body.add(light);
 
-  /* بارگذاری مدل واقعی */
+  /* بارگذاری مدل اصلی GLB */
   const ready = new Promise((resolve) => {
     new GLTFLoader().load(
       url,
@@ -260,12 +299,34 @@ export function createPlane(opts = {}) {
         model.traverse((o) => {
           if (!o.isMesh) return;
           const m = o.material;
-          // در شب هم بدنه دیده شود؛ لنزهای قرمز کمی خودتاب
+
+          // اعمال لوگو روی متریال دم یا بدنه مدل GLB در صورت وجود (بر اساس نام متریال/مش)
+          if (
+            o.name.toLowerCase().includes("fin") ||
+            o.name.toLowerCase().includes("tail")
+          ) {
+            o.material = o.material.clone();
+            o.material.map = logoTexture;
+            o.material.needsUpdate = true;
+          }
+
           m.emissive = m.color
             .clone()
             .multiplyScalar(m.name === "red" ? 0.6 : 0.09);
           m.needsUpdate = true;
         });
+
+        // اگر بخواهید لوگو به صورت دکال جداگانه روی دم مدل GLB اضافه شود:
+        const logoMeshR = createLogoPlane(logoTexture);
+        logoMeshR.position.set(0.04, 1.6, -3.6);
+        logoMeshR.rotation.y = Math.PI / 2;
+        model.add(logoMeshR);
+
+        const logoMeshL = createLogoPlane(logoTexture);
+        logoMeshL.position.set(-0.04, 1.6, -3.6);
+        logoMeshL.rotation.y = -Math.PI / 2;
+        model.add(logoMeshL);
+
         body.remove(proc);
         proc.traverse((o) => {
           if (o.geometry) o.geometry.dispose();
