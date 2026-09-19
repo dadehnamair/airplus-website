@@ -306,7 +306,10 @@ export function startFlight(root, content, opts = {}) {
       }
     }
   }
-  const AIRPORT_SCALE = 0.6, AIRPORT_LAT = 80;
+  // نزدیک نگه داشتن مدل: هرچه دورتر باشد جزئیات (پنجره‌ها، حجم ساختمان‌ها) دیده نمی‌شود
+  // و فقط یک سایه‌ی تخت به‌نظر می‌رسد. فاصله‌ی جانبی فقط باید از تاب‌خوردن هواپیما (~۲۰ واحد)
+  // و باند فرود (پهنای ۱۴) عبور کند، نه بیشتر.
+  const AIRPORT_SCALE = 0.85, AIRPORT_LAT = 45, AIRPORT_FORWARD = 65;
   let airportPlacement = null, airportLoadAt = -1;
   sections.forEach((s, i) => {
     if (s.type !== 'content') return;
@@ -316,8 +319,8 @@ export function startFlight(root, content, opts = {}) {
     if (s.scene === 'towers') addTowers(tc(a + AHEAD * 0.6), tc(b + AHEAD));
     if (s.scene === 'airport') {
       // کمی جلوتر از وسط بخش تا وقتی متن کاملاً دیده می‌شود، مدل هم جلوی دوربین باشد نه کنار آن
-      frame3(tc(r.mid + 130 / L));
-      airportPlacement = { x: tmpP.x + sideV.x * AIRPORT_LAT, z: tmpP.z + sideV.z * AIRPORT_LAT, rotY: Math.atan2(-tmpT.x, -tmpT.z) };
+      frame3(tc(r.mid + AIRPORT_FORWARD / L));
+      airportPlacement = { x: tmpP.x + sideV.x * AIRPORT_LAT, z: tmpP.z + sideV.z * AIRPORT_LAT, rotY: Math.atan2(-tmpT.x, -tmpT.z) + Math.PI / 2 };
       airportLoadAt = Math.max(0, r.mid - 0.15);
     }
   });
@@ -325,13 +328,12 @@ export function startFlight(root, content, opts = {}) {
   const ctaSection = sections.find((s) => s.type === 'cta');
   if (ctaSection && ctaSection.scene === 'airport') {
     frame3(1);
-    const forwardOffset = 220;
     airportPlacement = {
-      x: tmpP.x + tmpT.x * forwardOffset + sideV.x * AIRPORT_LAT,
-      z: tmpP.z + tmpT.z * forwardOffset + sideV.z * AIRPORT_LAT,
-      rotY: Math.atan2(-tmpT.x, -tmpT.z),
+      x: tmpP.x + tmpT.x * AIRPORT_FORWARD + sideV.x * AIRPORT_LAT,
+      z: tmpP.z + tmpT.z * AIRPORT_FORWARD + sideV.z * AIRPORT_LAT,
+      rotY: Math.atan2(-tmpT.x, -tmpT.z) + Math.PI / 2,
     };
-    airportLoadAt = Math.max(0, 1 - 200 / L);
+    airportLoadAt = Math.max(0, 1 - (AIRPORT_FORWARD + 130) / L);
   }
 
   // مدل فرودگاه: فایلی سنگین است، فقط وقتی یکی از بخش‌ها آن را انتخاب کرده لود می‌شود
