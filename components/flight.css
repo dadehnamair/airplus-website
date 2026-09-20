@@ -309,29 +309,24 @@
 }
 
 /* ---------- پنل‌های متن ---------- */
+/* همه‌ی کارت‌ها وسط صفحه‌اند، جایی که هواپیما درست از وسطشان رد می‌شود؛ نه کنار صفحه */
 .panel {
   position: fixed;
   top: 0;
   bottom: 0;
-  inset-inline-start: clamp(20px, 6vw, 100px);
-  width: min(500px, calc(100vw - 40px));
+  inset-inline: 0;
+  width: 100%;
   z-index: 10;
   display: flex;
+  justify-content: center;
   align-items: center;
   pointer-events: none;
   visibility: hidden;
   opacity: 0;
 }
-/* کارت برخاست کنار صفحه نمی‌نشیند؛ وسط صفحه است، جایی که هواپیما درست از وسطش رد می‌شود */
-.panel[data-type="hero"] {
-  inset-inline-start: 0;
-  inset-inline-end: 0;
-  width: 100%;
-  justify-content: center;
-}
 .card {
   pointer-events: auto;
-  width: 100%;
+  width: min(560px, calc(100vw - 40px));
   max-height: calc(100vh - 110px);
   overflow: auto;
   background: var(--glass);
