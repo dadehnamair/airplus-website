@@ -368,6 +368,7 @@ export function startFlight(root, content, opts = {}) {
   const hint = root.querySelector('.scrollhint');
   const mist = root.querySelector('.mist');
   const track = root.querySelector('.track');
+  const bar = root.querySelector('.bar');
   const iAlt = root.querySelector('[data-k="alt"]'), iSpd = root.querySelector('[data-k="spd"]'), iHdg = root.querySelector('[data-k="hdg"]'), iCloud = root.querySelector('[data-k="cloud"]');
   const qGroups = Array.from(root.querySelectorAll('.qs')).map((el) => ({ els: Array.from(el.querySelectorAll('figure')), i: 0 }));
   qGroups.forEach((g) => {
@@ -401,9 +402,32 @@ export function startFlight(root, content, opts = {}) {
   let auto = false, autoAcc = 0;
   const stopAuto = () => { if (auto) { auto = false; onState({ auto: false }); } };
   api.toggleSound = async () => {
-    if (audio.enabled) { audio.disable(); return false; }
+    if (audio.enabled) { audio.disable(); wantsSound = false; return false; }
+    wantsSound = true;
     return audio.enable();
   };
+
+  // پخش خودکار صدا؛ اگر مرورگر بدون تعامل کاربر اجازه نداد، با اولین کلیک/لمس/اسکرول شروع می‌شود
+  let wantsSound = !reduce;
+  if (wantsSound) {
+    audio.enable().then((ok) => {
+      onState({ sound: ok });
+      if (!ok) {
+        const tryStart = () => { audio.enable().then((started) => { if (started) onState({ sound: true }); }); };
+        const opts2 = { once: true, passive: true };
+        on(window, 'pointerdown', tryStart, opts2);
+        on(window, 'keydown', tryStart, opts2);
+        on(window, 'touchstart', tryStart, opts2);
+        on(window, 'wheel', tryStart, opts2);
+      }
+    });
+  }
+  // وقتی از تب خارج می‌شوی صدا آرام قطع و وقتی برگردی دوباره وصل می‌شود (فقط اگر خودِ کاربر خاموشش نکرده باشد)
+  on(document, 'visibilitychange', () => {
+    if (!wantsSound) return;
+    if (document.hidden) { if (audio.enabled) audio.disable(); }
+    else if (!audio.enabled) { audio.enable().then((ok) => onState({ sound: ok })); }
+  });
   api.toggleAuto = () => { auto = !auto; autoAcc = 0; return auto; };
   api.goto = scrollToP;
   api.setQuality = (q) => {
@@ -415,7 +439,11 @@ export function startFlight(root, content, opts = {}) {
 
   /* ---------- ورودی‌ها ---------- */
   let target = 0, cur = 0, prevCur = 0, mx = 0, my = 0;
-  const readScroll = () => { target = clamp(window.scrollY / maxScroll(), 0, 1); };
+  const readScroll = () => {
+    target = clamp(window.scrollY / maxScroll(), 0, 1);
+    // نوار بالا فقط باید روی صحنه‌ی سه‌بعدی شناور بماند؛ وقتی فوتر (زیر track) دیده می‌شود باید کنار برود
+    if (bar) bar.classList.toggle('bar-hidden', window.scrollY > maxScroll() + 24);
+  };
   on(window, 'scroll', readScroll, { passive: true });
   on(window, 'pointermove', (e) => { if (e.pointerType === 'touch') return; mx = clamp((e.clientX / window.innerWidth - 0.5) * 2, -1, 1); my = clamp((e.clientY / window.innerHeight - 0.5) * 2, -1, 1); }, { passive: true });
   on(window, 'wheel', stopAuto, { passive: true });
