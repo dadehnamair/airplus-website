@@ -643,19 +643,21 @@ export function startFlight(root, content, opts = {}) {
 
     /* دوربین تعقیب: کمی عقب‌تر از هواپیما و با کمی تاخیر جانبی */
     const narrow = camera.aspect < 1;
+    // درست وسط هر بخش، دوربین به سمت هواپیما/کارت سر می‌خورد تا هواپیما از کنار/داخل کارت متن
+    // (که همیشه آن سمت صفحه ثابت است) عبور کند، نه اینکه همیشه از آن دور بماند. هم موقعیت خودِ
+    // دوربین و هم نقطه‌ی نگاهش جابه‌جا می‌شود، وگرنه قدرت این افکت به فاز تصادفیِ پیچ‌و‌خم مسیر در
+    // هر بخش بستگی پیدا می‌کند و مثلاً در بخش اول (برخاست) تقریباً دیده نمی‌شد.
+    const cardPass = narrow ? 0 : nearestMidBump(p);
     camera.position.set(
-      camPos.x + sd.x * ox * 0.28,
+      camPos.x + sd.x * (ox * 0.28 - cardPass * 3.4),
       camPos.y + 3.6 + oy * 0.22,
-      camPos.z + sd.z * ox * 0.28);
+      camPos.z + sd.z * (ox * 0.28 - cardPass * 3.4));
     if (!reduce && cloudAmt > 0.05) {
       const sh = cloudAmt * (0.6 + speedS);
       camera.position.y += Math.sin(time * 17.3) * 0.03 * sh;
       camera.position.x += Math.sin(time * 13.1 + 1) * 0.025 * sh;
     }
-    // درست وسط هر بخش، دوربین کمی برعکس می‌شود تا هواپیما از کنار/داخل کارت متن (که همیشه
-    // آن سمت صفحه ثابت است) عبور کند، نه اینکه همیشه از آن دور بماند
-    const cardPass = narrow ? 0 : nearestMidBump(p);
-    const sideBase = (narrow ? 0 : 3.6) * (1 - cardPass * 2.35);
+    const sideBase = (narrow ? 0 : 3.6) * (1 - cardPass * 2.6);
     lookT.copy(plane.rig.position).addScaledVector(Tp, 7).addScaledVector(sd, sideBase + (coarse ? 0 : mx * 1.0));
     lookT.y += narrow ? 3.5 : 0.8;
     camera.lookAt(lookT);
