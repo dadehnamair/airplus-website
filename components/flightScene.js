@@ -365,8 +365,10 @@ export function startFlight(root, content, opts = {}) {
   const track = root.querySelector('.track');
   const bar = root.querySelector('.bar');
   const iAlt = root.querySelector('[data-k="alt"]'), iSpd = root.querySelector('[data-k="spd"]'), iHdg = root.querySelector('[data-k="hdg"]'), iCloud = root.querySelector('[data-k="cloud"]');
+  const hudLabel = root.querySelector('.hud-label');
   const lsBox = root.querySelector('.landing-score');
-  const lsGrade = root.querySelector('[data-k="ls-grade"]'), lsFill = root.querySelector('[data-k="ls-fill"]'), lsNum = root.querySelector('[data-k="ls-num"]'), lsBest = root.querySelector('[data-k="ls-best"]');
+  const lsGrade = root.querySelector('[data-k="ls-grade"]'), lsFill = root.querySelector('[data-k="ls-fill"]'), lsNum = root.querySelector('[data-k="ls-num"]');
+  const lsRecord = root.querySelector('[data-k="ls-record"]'), lsName = root.querySelector('[data-k="ls-name"]'), lsSave = root.querySelector('[data-k="ls-save"]'), lsClose = root.querySelector('[data-k="ls-close"]');
   // در دسکتاپ مثل قبل باز است؛ روی گوشی بسته شروع می‌شود تا کارت کمتر شلوغ باشد و با لمس باز شود
   if (!window.matchMedia('(max-width:760px)').matches) {
     root.querySelectorAll('ol.steps details').forEach((d) => { d.open = true; });
@@ -474,17 +476,38 @@ export function startFlight(root, content, opts = {}) {
 
   /* ---------- امتیاز فرود: بر اساس چپ/راست (تراز روی باند) و سرعت نشستن، مثل یک بازی کوچک ---------- */
   const LS_WINDOW = 0.085;
-  let lsDone = false, lsSamples = 0, lsLatAcc = 0, lsSpeedAcc = 0;
+  let lsDone = false, lsSamples = 0, lsLatAcc = 0, lsSpeedAcc = 0, lastScore = 0;
+  function readRecord() {
+    try {
+      const raw = localStorage.getItem('ap-landing-record');
+      if (raw) { const r = JSON.parse(raw); if (typeof r.score === 'number') return r; }
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+  function writeRecord(name, score) {
+    try { localStorage.setItem('ap-landing-record', JSON.stringify({ name, score })); } catch (e) { /* ignore */ }
+  }
+  function renderRecord() {
+    const rec = readRecord();
+    if (lsRecord) lsRecord.textContent = rec ? (rec.name ? rec.name + ' · ' + toFa(rec.score) : 'رکورد ' + toFa(rec.score)) : 'رکورد شما ثبت نشده';
+    if (lsName && !lsName.value && rec && rec.name) lsName.value = rec.name;
+  }
+  if (lsSave) on(lsSave, 'click', () => {
+    const typed = ((lsName && lsName.value) || '').trim().slice(0, 18);
+    const rec = readRecord();
+    const bestScore = Math.max(lastScore, rec ? rec.score : 0);
+    writeRecord(typed || (rec ? rec.name : ''), bestScore);
+    renderRecord();
+  });
+  if (lsClose) on(lsClose, 'click', () => { if (lsBox) { lsBox.classList.remove('show'); lsBox.hidden = true; } });
   function showLandingScore(score) {
     if (!lsBox) return;
-    let best = 0;
-    try { best = parseInt(localStorage.getItem('ap-landing-best') || '0', 10) || 0; } catch (e) { /* ignore */ }
-    if (score > best) { best = score; try { localStorage.setItem('ap-landing-best', String(best)); } catch (e) { /* ignore */ } }
+    lastScore = score;
     const grade = score >= 92 ? 'فرود بی‌نقص!' : score >= 78 ? 'فرود خیلی خوب' : score >= 58 ? 'فرود قابل قبول' : 'فرود ناهموار';
     if (lsGrade) lsGrade.textContent = grade;
     if (lsNum) lsNum.textContent = toFa(score);
-    if (lsBest) lsBest.textContent = toFa(best);
     if (lsFill) lsFill.style.width = score + '%';
+    renderRecord();
     lsBox.hidden = false;
     requestAnimationFrame(() => lsBox.classList.add('show'));
   }
@@ -662,7 +685,8 @@ export function startFlight(root, content, opts = {}) {
     /* HUD */
     const si = clamp(Math.floor(p * N), 0, N - 1);
     stopEls.forEach((el, i) => { if (i === si) el.setAttribute('aria-current', 'true'); else el.removeAttribute('aria-current'); });
-    if (pct) pct.textContent = Math.round(p * 100).toLocaleString('fa-IR') + '٪ مسیر';
+    if (hudLabel) hudLabel.textContent = sections[si].label;
+    if (pct) pct.textContent = Math.round(p * 100).toLocaleString('fa-IR') + '٪';
     if (hint) hint.style.opacity = p < 0.012 ? 1 : 0;
     if (mist) {
       const w = clamp(cloudAmt * 0.6, 0, 0.62);
