@@ -322,6 +322,13 @@
   visibility: hidden;
   opacity: 0;
 }
+/* کارت برخاست کنار صفحه نمی‌نشیند؛ وسط صفحه است، جایی که هواپیما درست از وسطش رد می‌شود */
+.panel[data-type="hero"] {
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  width: 100%;
+  justify-content: center;
+}
 .card {
   pointer-events: auto;
   width: 100%;
