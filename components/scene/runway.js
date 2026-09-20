@@ -67,7 +67,11 @@ export function createRunway({ zStart, zEnd, aniso = 1, rand = Math.random }) {
   grass.rotation.x = -Math.PI / 2; grass.position.set(0, 0.025, (zStart + zEnd) / 2);
   group.add(grass);
 
-  // چراغ‌های کناره‌ی باند (زرد چشمک‌زن، مثل قبل ولی از این پس داخل همین ماژول)
+  // چراغ‌های باند (زرد چشمک‌زن، سبز ورودی، آبی محیطی)؛ همه در یک گروه جدا تا بشود
+  // با دکمه‌ی «چراغ‌های باند» در پنل پرواز یک‌جا روشن/خاموش شوند
+  const lightsGroup = new THREE.Group();
+  group.add(lightsGroup);
+
   const runwayLightMats = [];
   const lightGeo = new THREE.SphereGeometry(0.38, 8, 6);
   for (let ph = 0; ph < 3; ph++) {
@@ -76,7 +80,7 @@ export function createRunway({ zStart, zEnd, aniso = 1, rand = Math.random }) {
     const inst = new THREE.InstancedMesh(lightGeo, mat, list.length * 2);
     const dummy = new THREE.Object3D();
     list.forEach((z, idx) => { [-6.4, 6.4].forEach((x2, side) => { dummy.position.set(x2, 0.4, z); dummy.updateMatrix(); inst.setMatrixAt(idx * 2 + side, dummy.matrix); }); });
-    inst.frustumCulled = false; group.add(inst); runwayLightMats.push({ mat, ph });
+    inst.frustumCulled = false; lightsGroup.add(inst); runwayLightMats.push({ mat, ph });
   }
 
   // چراغ‌های سبز ورودی باند
@@ -84,14 +88,14 @@ export function createRunway({ zStart, zEnd, aniso = 1, rand = Math.random }) {
   const thPositions = []; for (let x2 = -6.4; x2 <= 6.4 + 0.01; x2 += 1.85) thPositions.push(x2);
   const thInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.34, 8, 6), thMat, thPositions.length);
   { const dummy = new THREE.Object3D(); thPositions.forEach((x2, i) => { dummy.position.set(x2, 0.4, zStart + 2); dummy.updateMatrix(); thInst.setMatrixAt(i, dummy.matrix); }); }
-  thInst.frustumCulled = false; group.add(thInst);
+  thInst.frustumCulled = false; lightsGroup.add(thInst);
 
   // چراغ‌های آبی محیطی (شبیه چراغ‌های تاکسی‌وی) کمی دورتر از باند
   const peMat = new THREE.MeshBasicMaterial({ color: 0x4fa8ff });
   const peList = []; for (let z = zStart; z > zEnd + 40; z -= 42) peList.push(z);
   const peInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.3, 6, 5), peMat, Math.max(1, peList.length * 2));
   { const dummy = new THREE.Object3D(); peList.forEach((z, idx) => { [-17, 17].forEach((x2, side) => { dummy.position.set(x2, 0.32, z); dummy.updateMatrix(); peInst.setMatrixAt(idx * 2 + side, dummy.matrix); }); }); }
-  peInst.frustumCulled = false; group.add(peInst);
+  peInst.frustumCulled = false; lightsGroup.add(peInst);
 
   // بادنمای کوچک کنار باند
   const sock = new THREE.Group();
@@ -130,5 +134,5 @@ export function createRunway({ zStart, zEnd, aniso = 1, rand = Math.random }) {
     cone.rotation.y = Math.sin(time * 1.35) * 0.28;
   }
 
-  return { group, update };
+  return { group, update, lights: lightsGroup };
 }

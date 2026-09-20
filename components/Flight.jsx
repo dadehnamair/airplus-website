@@ -29,6 +29,7 @@ export default function Flight({ content }) {
   const [open, setOpen] = useState(false);
   const [sound, setSound] = useState(false);
   const [auto, setAuto] = useState(false);
+  const [lights, setLights] = useState(true);
   const [quality, setQuality] = useState('auto');
   const { brand, sections, contact } = content;
   const N = sections.length;
@@ -100,11 +101,41 @@ export default function Flight({ content }) {
 
   const toggleSound = async () => { if (apiRef.current) setSound(await apiRef.current.toggleSound()); };
   const toggleAuto = () => { if (apiRef.current) setAuto(apiRef.current.toggleAuto()); };
+  const toggleLights = () => { if (apiRef.current) setLights(apiRef.current.toggleLights()); };
   const pickQuality = (q) => {
     setQuality(q);
     try { localStorage.setItem('ap-quality', q); } catch (e) { /* ignore */ }
     if (apiRef.current) apiRef.current.setQuality(q);
   };
+
+  /* ردیف‌های امکانات؛ هم داخل کنسول دسکتاپ و هم داخل پاپ‌آپ موبایل استفاده می‌شود */
+  function renderControls() {
+    return (
+      <>
+        <div className="st-row">
+          <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="M16 8a5 5 0 0 1 0 8" /></svg>صدای پرواز</span>
+          <button type="button" role="switch" aria-checked={sound} className="sw" onClick={toggleSound}><i /></button>
+        </div>
+        <div className="st-row">
+          <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" /></svg>پرواز خودکار</span>
+          <button type="button" role="switch" aria-checked={auto} className="sw" onClick={toggleAuto}><i /></button>
+        </div>
+        <div className="st-row">
+          <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" /></svg>چراغ‌های باند</span>
+          <button type="button" role="switch" aria-checked={lights} className="sw" onClick={toggleLights}><i /></button>
+        </div>
+        <div className="st-row col">
+          <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18" /></svg>کیفیت تصویر</span>
+          <div className="seg" role="group" aria-label="کیفیت تصویر">
+            {[['auto', 'خودکار'], ['high', 'بالا'], ['low', 'کم']].map(([k, l]) => (
+              <button type="button" key={k} aria-pressed={quality === k} onClick={() => pickQuality(k)}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <p className="st-hint">با موس هواپیما را هدایت کنید. کلیدهای ↑ و ↓ بین بخش‌ها می‌پرند.</p>
+      </>
+    );
+  }
 
   function renderBody(s) {
     switch (s.type) {
@@ -238,17 +269,19 @@ export default function Flight({ content }) {
         );
       })}
 
-      {/* کنسول جلوی خلبان: یک نوار افقی پایین صفحه، رادار/مسیر/اطلاعات پرواز/دکمه‌ی امکانات یک‌جا */}
+      {/* کنسول جلوی خلبان: پایین-چپ صفحه، رادار/مسیر/اطلاعات پرواز/امکانات همه روی خود پنل */}
       <div className="cockpit">
-        <button type="button" className="radar" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
-          <span className="radar-face">
-            <i className="radar-sweep" />
-            <i className="radar-blip" style={{ '--a': '35deg', '--d': '17px' }} />
-            <i className="radar-blip radar-blip2" style={{ '--a': '160deg', '--d': '23px' }} />
-            <i className="radar-blip radar-blip3" style={{ '--a': '270deg', '--d': '13px' }} />
-          </span>
-          <small>رادار</small>
-        </button>
+        <div className="cp-head">
+          <div className="radar" aria-hidden="true">
+            <span className="radar-face">
+              <i className="radar-sweep" />
+              <i className="radar-blip" style={{ '--a': '35deg', '--d': '17px' }} />
+              <i className="radar-blip radar-blip2" style={{ '--a': '160deg', '--d': '23px' }} />
+              <i className="radar-blip radar-blip3" style={{ '--a': '270deg', '--d': '13px' }} />
+            </span>
+          </div>
+          <b className="cp-title">پنل پرواز</b>
+        </div>
 
         <div className="cp-line" aria-hidden="true" />
 
@@ -258,8 +291,10 @@ export default function Flight({ content }) {
               <button key={s.id} type="button" className="stop" aria-label={s.label} />
             ))}
           </div>
-          <small className="hud-label" data-k="hud-label" />
-          <div className="pct" />
+          <div className="hud-info">
+            <small className="hud-label" data-k="hud-label" />
+            <div className="pct" />
+          </div>
         </nav>
 
         <div className="cp-line" aria-hidden="true" />
@@ -273,13 +308,10 @@ export default function Flight({ content }) {
 
         <div className="cp-line" aria-hidden="true" />
 
-        <button type="button" className="cp-gear" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
-          <span>امکانات پرواز</span>
-        </button>
+        <div className="cp-settings">{renderControls()}</div>
       </div>
 
-      {/* دکمه‌ی امکانات روی گوشی، چون باکس کامل ابزار پرواز آنجا جا نمی‌شود */}
+      {/* دکمه‌ی امکانات روی گوشی/تبلت، چون پنل کامل کابین آنجا جا نمی‌شود */}
       <div className="tools">
         <button type="button" className="gear" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
@@ -293,23 +325,7 @@ export default function Flight({ content }) {
             <b>امکانات پرواز</b>
             <button type="button" className="st-close" aria-label="بستن" onClick={() => setOpen(false)}>×</button>
           </div>
-          <div className="st-row">
-            <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="M16 8a5 5 0 0 1 0 8" /></svg>صدای پرواز</span>
-            <button type="button" role="switch" aria-checked={sound} className="sw" onClick={toggleSound}><i /></button>
-          </div>
-          <div className="st-row">
-            <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" /></svg>پرواز خودکار</span>
-            <button type="button" role="switch" aria-checked={auto} className="sw" onClick={toggleAuto}><i /></button>
-          </div>
-          <div className="st-row col">
-            <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18" /></svg>کیفیت تصویر</span>
-            <div className="seg" role="group" aria-label="کیفیت تصویر">
-              {[['auto', 'خودکار'], ['high', 'بالا'], ['low', 'کم']].map(([k, l]) => (
-                <button type="button" key={k} aria-pressed={quality === k} onClick={() => pickQuality(k)}>{l}</button>
-              ))}
-            </div>
-          </div>
-          <p className="st-hint">با موس هواپیما را هدایت کنید. کلیدهای ↑ و ↓ بین بخش‌ها می‌پرند.</p>
+          {renderControls()}
         </div>
       )}
 
