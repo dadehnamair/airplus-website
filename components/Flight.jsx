@@ -133,8 +133,10 @@ export default function Flight({ content }) {
             <ol className="steps">
               {s.steps.map((st, i) => (
                 <li key={i}>
-                  <span className="n">{toFa(i + 1)}</span>
-                  <div><b>{st.title}</b>{st.desc && <small>{st.desc}</small>}</div>
+                  <details>
+                    <summary><span className="n">{toFa(i + 1)}</span><b>{st.title}</b></summary>
+                    {st.desc && <small>{st.desc}</small>}
+                  </details>
                 </li>
               ))}
             </ol>
@@ -176,6 +178,11 @@ export default function Flight({ content }) {
         return (
           <>
             <h2>{s.title}</h2>
+            <div className="landing-score" hidden>
+              <b className="ls-grade" data-k="ls-grade" />
+              <div className="ls-bar"><i data-k="ls-fill" /></div>
+              <small>امتیاز فرود <b data-k="ls-num">۰</b>/۱۰۰ &nbsp;·&nbsp; رکورد <b data-k="ls-best">۰</b></small>
+            </div>
             {s.lead && <p className="lead">{s.lead}</p>}
             {s.formEnabled
               ? <LeadForm />
@@ -198,7 +205,14 @@ export default function Flight({ content }) {
         <div className="lo-name"><span>{brand.name}</span></div>
         <div className="lo-tag">{brand.tagline}</div>
         <div className="lo-bar"><i /></div>
-        <svg className="lo-plane" viewBox="0 0 48 20" aria-hidden="true"><path d="M2 10 L46 2 L34 18 L26 11 Z" fill="#e4b817" /></svg>
+        <div className="lo-radar" aria-hidden="true">
+          <div className="radar-face">
+            <i className="radar-sweep" />
+            <i className="radar-blip" style={{ '--a': '35deg', '--d': '17px' }} />
+            <i className="radar-blip radar-blip2" style={{ '--a': '160deg', '--d': '23px' }} />
+            <i className="radar-blip radar-blip3" style={{ '--a': '270deg', '--d': '13px' }} />
+          </div>
+        </div>
       </div>
 
       <div className="vignette" aria-hidden="true" />
@@ -213,6 +227,7 @@ export default function Flight({ content }) {
         <nav className="st-nav bar-nav" aria-label="ناوبری">
           <a href="/about">درباره ما</a>
           <a href="/blog">وبلاگ</a>
+          <button type="button" className="nav-link-btn" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>امکانات</button>
         </nav>
         <button className="btn" type="button" {...demoAttr}>درخواست دمو</button>
       </header>
@@ -228,57 +243,75 @@ export default function Flight({ content }) {
         );
       })}
 
-      <nav className="hud" aria-label="مسیر پرواز">
-        {sections.map((s) => (
-          <button key={s.id} type="button" className="stop"><span>{s.label}</span><i /></button>
-        ))}
-        <div className="pct" />
-      </nav>
+      {/* پنل ابزار پرواز: مثل جلوی خلبان، مسیر/رادار/اطلاعات پرواز/تنظیمات یک‌جا */}
+      <div className="cockpit">
+        <button type="button" className="radar" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
+          <span className="radar-face">
+            <i className="radar-sweep" />
+            <i className="radar-blip" style={{ '--a': '35deg', '--d': '17px' }} />
+            <i className="radar-blip radar-blip2" style={{ '--a': '160deg', '--d': '23px' }} />
+            <i className="radar-blip radar-blip3" style={{ '--a': '270deg', '--d': '13px' }} />
+          </span>
+          <small>رادار</small>
+        </button>
 
-      <div className="instr" aria-hidden="true">
-        <div><small>ارتفاع (فوت)</small><b data-k="alt">۰</b></div>
-        <div><small>سرعت (km/h)</small><b data-k="spd">۰</b></div>
-        <div><small>جهت</small><b data-k="hdg">۰۰۰°</b></div>
-        <div className="cl"><b data-k="cloud">دید آزاد</b></div>
-      </div>
+        <div className="cp-line" aria-hidden="true" />
 
-      <div className="radar" aria-hidden="true">
-        <div className="radar-face">
-          <i className="radar-sweep" />
-          <i className="radar-blip" style={{ '--a': '35deg', '--d': '17px' }} />
-          <i className="radar-blip radar-blip2" style={{ '--a': '160deg', '--d': '23px' }} />
-          <i className="radar-blip radar-blip3" style={{ '--a': '270deg', '--d': '13px' }} />
+        <nav className="hud" aria-label="مسیر پرواز">
+          {sections.map((s) => (
+            <button key={s.id} type="button" className="stop"><span>{s.label}</span><i /></button>
+          ))}
+          <div className="pct" />
+        </nav>
+
+        <div className="cp-line" aria-hidden="true" />
+
+        <div className="instr" aria-hidden="true">
+          <div><small>ارتفاع (فوت)</small><b data-k="alt">۰</b></div>
+          <div><small>سرعت (km/h)</small><b data-k="spd">۰</b></div>
+          <div><small>جهت</small><b data-k="hdg">۰۰۰°</b></div>
+          <div className="cl"><b data-k="cloud">دید آزاد</b></div>
         </div>
-        <small>رادار</small>
+
+        <button type="button" className="cp-gear" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
+          <span>امکانات پرواز</span>
+        </button>
       </div>
 
+      {/* دکمه‌ی امکانات روی گوشی، چون باکس کامل ابزار پرواز آنجا جا نمی‌شود */}
       <div className="tools">
         <button type="button" className="gear" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
-          <span>تنظیمات پرواز</span>
+          <span>امکانات پرواز</span>
         </button>
-        {open && (
-          <div className="settings" id="settings" role="dialog" aria-label="تنظیمات پرواز">
-            <div className="st-row">
-              <span>صدای پرواز</span>
-              <button type="button" role="switch" aria-checked={sound} className="sw" onClick={toggleSound}><i /></button>
-            </div>
-            <div className="st-row">
-              <span>پرواز خودکار</span>
-              <button type="button" role="switch" aria-checked={auto} className="sw" onClick={toggleAuto}><i /></button>
-            </div>
-            <div className="st-row col">
-              <span>کیفیت تصویر</span>
-              <div className="seg" role="group" aria-label="کیفیت تصویر">
-                {[['auto', 'خودکار'], ['high', 'بالا'], ['low', 'کم']].map(([k, l]) => (
-                  <button type="button" key={k} aria-pressed={quality === k} onClick={() => pickQuality(k)}>{l}</button>
-                ))}
-              </div>
-            </div>
-            <p className="st-hint">با موس هواپیما را هدایت کنید. کلیدهای ↑ و ↓ بین بخش‌ها می‌پرند.</p>
-          </div>
-        )}
       </div>
+
+      {open && (
+        <div className="settings" id="settings" role="dialog" aria-label="امکانات و تنظیمات پرواز">
+          <div className="st-head">
+            <b>امکانات پرواز</b>
+            <button type="button" className="st-close" aria-label="بستن" onClick={() => setOpen(false)}>×</button>
+          </div>
+          <div className="st-row">
+            <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="M16 8a5 5 0 0 1 0 8" /></svg>صدای پرواز</span>
+            <button type="button" role="switch" aria-checked={sound} className="sw" onClick={toggleSound}><i /></button>
+          </div>
+          <div className="st-row">
+            <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" /></svg>پرواز خودکار</span>
+            <button type="button" role="switch" aria-checked={auto} className="sw" onClick={toggleAuto}><i /></button>
+          </div>
+          <div className="st-row col">
+            <span><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18" /></svg>کیفیت تصویر</span>
+            <div className="seg" role="group" aria-label="کیفیت تصویر">
+              {[['auto', 'خودکار'], ['high', 'بالا'], ['low', 'کم']].map(([k, l]) => (
+                <button type="button" key={k} aria-pressed={quality === k} onClick={() => pickQuality(k)}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <p className="st-hint">با موس هواپیما را هدایت کنید. کلیدهای ↑ و ↓ بین بخش‌ها می‌پرند.</p>
+        </div>
+      )}
 
       <div className="scrollhint" aria-hidden="true">
         <span>اسکرول کنید</span>

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { makePuffAtlas, createPuffSystem, createCloudField } from './scene/clouds';
 import { createPlane } from './scene/plane';
 import { createAirport } from './scene/airport';
+import { createRunway } from './scene/runway';
 import { createAudio } from './scene/audio';
 import { sectionRange } from '@/lib/layout';
 
@@ -37,6 +38,7 @@ export function startFlight(root, content, opts = {}) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const coarse = window.matchMedia('(pointer: coarse)').matches;
   const loader = root.querySelector('.loader');
+  const radarEl = root.querySelector('.radar');
   const bootAt = performance.now();
   const disposers = [];
   let disposed = false;
@@ -48,7 +50,9 @@ export function startFlight(root, content, opts = {}) {
   };
   const finishLoader = () => {
     const wait = Math.max(0, 1900 - (performance.now() - bootAt));
-    const id = setTimeout(() => loader && loader.classList.add('done'), wait);
+    // رادار روی صفحه‌ی لودینگ (پایین وسط) محو می‌شود و هم‌زمان رادار واقعی HUD
+    // با یک انیمیشن ورود به جای همیشگی‌اش (کنار جعبه‌ی ابزار پرواز) می‌نشیند
+    const id = setTimeout(() => { loader && loader.classList.add('done'); radarEl && radarEl.classList.add('arrived'); }, wait);
     disposers.push(() => clearTimeout(id));
   };
   function fallback() {
@@ -246,7 +250,7 @@ export function startFlight(root, content, opts = {}) {
   }
 
   /* ---------- اشیای صحنه هر بخش ---------- */
-  const cards = [], bars = [], runwayMats = [];
+  const cards = [], bars = [];
   function addTickets(list, ta, tb) {
     const geo = new THREE.PlaneGeometry(6.2, 3.5);
     list.forEach((d, i) => {
@@ -347,19 +351,10 @@ export function startFlight(root, content, opts = {}) {
     airport.group.rotation.y = airportPlacement.rotY;
   }
 
-  // باند فرود
+  // باند فرود و اطراف آن (آسفالت واقعی، چمن، چراغ‌های ورودی/محیطی، هانگار، بادنما)
   frame3(runwayT); const zStart = tmpP.z, zEnd = zStart - 900;
-  const strip = new THREE.Mesh(new THREE.PlaneGeometry(14, Math.abs(zEnd - zStart)), new THREE.MeshBasicMaterial({ color: 0x151b3d }));
-  strip.rotation.x = -Math.PI / 2; strip.position.set(0, 0.06, (zStart + zEnd) / 2); scene.add(strip);
-  const lightGeo = new THREE.SphereGeometry(0.38, 8, 6);
-  for (let ph = 0; ph < 3; ph++) {
-    const mat = new THREE.MeshBasicMaterial({ color: 0xe4b817 });
-    const list = []; for (let z = zStart - ph * 8; z > zEnd; z -= 24) list.push(z);
-    const inst = new THREE.InstancedMesh(lightGeo, mat, list.length * 2);
-    const dummy = new THREE.Object3D();
-    list.forEach((z, idx) => { [-6.2, 6.2].forEach((x, side) => { dummy.position.set(x, 0.35, z); dummy.updateMatrix(); inst.setMatrixAt(idx * 2 + side, dummy.matrix); }); });
-    inst.frustumCulled = false; scene.add(inst); runwayMats.push({ mat, ph });
-  }
+  const runway = createRunway({ zStart, zEnd, aniso, rand });
+  scene.add(runway.group);
 
   /* ---------- DOM ---------- */
   const panels = panelEls.map((el) => ({ el, card: el.querySelector('.card'), a: parseFloat(el.dataset.a), b: parseFloat(el.dataset.b), type: el.dataset.type }));
@@ -370,6 +365,12 @@ export function startFlight(root, content, opts = {}) {
   const track = root.querySelector('.track');
   const bar = root.querySelector('.bar');
   const iAlt = root.querySelector('[data-k="alt"]'), iSpd = root.querySelector('[data-k="spd"]'), iHdg = root.querySelector('[data-k="hdg"]'), iCloud = root.querySelector('[data-k="cloud"]');
+  const lsBox = root.querySelector('.landing-score');
+  const lsGrade = root.querySelector('[data-k="ls-grade"]'), lsFill = root.querySelector('[data-k="ls-fill"]'), lsNum = root.querySelector('[data-k="ls-num"]'), lsBest = root.querySelector('[data-k="ls-best"]');
+  // در دسکتاپ مثل قبل باز است؛ روی گوشی بسته شروع می‌شود تا کارت کمتر شلوغ باشد و با لمس باز شود
+  if (!window.matchMedia('(max-width:760px)').matches) {
+    root.querySelectorAll('ol.steps details').forEach((d) => { d.open = true; });
+  }
   const qGroups = Array.from(root.querySelectorAll('.qs')).map((el) => ({ els: Array.from(el.querySelectorAll('figure')), i: 0 }));
   qGroups.forEach((g) => {
     g.els.forEach((q, i) => q.classList.toggle('on', i === 0));
@@ -407,20 +408,19 @@ export function startFlight(root, content, opts = {}) {
     return audio.enable();
   };
 
-  // پخش خودکار صدا؛ اگر مرورگر بدون تعامل کاربر اجازه نداد، با اولین کلیک/لمس/اسکرول شروع می‌شود
+  // پخش خودکار صدا؛ اگر مرورگر بدون تعامل کاربر اجازه نداد، با اولین کلیک/لمس/اسکرول شروع می‌شود.
+  // نکته: ctx.resume() وقتی مرورگر آن را مسدود کرده ممکن است تا مدت‌ها معلق (pending) بماند،
+  // پس نباید منتظرش ماند تا شنونده‌های کلیک/اسکرول را وصل کرد؛ همان ابتدا و مستقل از نتیجه‌ی
+  // تلاش اول وصل می‌شوند تا صدا هیچ‌وقت برای همیشه خاموش نماند.
   let wantsSound = !reduce;
   if (wantsSound) {
-    audio.enable().then((ok) => {
-      onState({ sound: ok });
-      if (!ok) {
-        const tryStart = () => { audio.enable().then((started) => { if (started) onState({ sound: true }); }); };
-        const opts2 = { once: true, passive: true };
-        on(window, 'pointerdown', tryStart, opts2);
-        on(window, 'keydown', tryStart, opts2);
-        on(window, 'touchstart', tryStart, opts2);
-        on(window, 'wheel', tryStart, opts2);
-      }
-    });
+    const tryStart = () => { audio.enable().then((started) => { if (started) onState({ sound: true }); }); };
+    const opts2 = { once: true, passive: true };
+    on(window, 'pointerdown', tryStart, opts2);
+    on(window, 'keydown', tryStart, opts2);
+    on(window, 'touchstart', tryStart, opts2);
+    on(window, 'wheel', tryStart, opts2);
+    audio.enable().then((ok) => onState({ sound: ok }));
   }
   // وقتی از تب خارج می‌شوی صدا آرام قطع و وقتی برگردی دوباره وصل می‌شود (فقط اگر خودِ کاربر خاموشش نکرده باشد)
   on(document, 'visibilitychange', () => {
@@ -471,6 +471,41 @@ export function startFlight(root, content, opts = {}) {
   const camPos = new V(), planePos0 = new V(), Tp = new V(), T2 = new V(), sd = new V(), fwd = new V(), lookT = new V(), tmpV = new V();
   let ox = 0, oy = 0, vx = 0, vy = 0, speedS = 0, cloudAmt = 0, lastFov = 0, frameNo = 0, roll = 0, pitch = 0;
   const sunCol = new THREE.Color();
+
+  /* ---------- امتیاز فرود: بر اساس چپ/راست (تراز روی باند) و سرعت نشستن، مثل یک بازی کوچک ---------- */
+  const LS_WINDOW = 0.085;
+  let lsDone = false, lsSamples = 0, lsLatAcc = 0, lsSpeedAcc = 0;
+  function showLandingScore(score) {
+    if (!lsBox) return;
+    let best = 0;
+    try { best = parseInt(localStorage.getItem('ap-landing-best') || '0', 10) || 0; } catch (e) { /* ignore */ }
+    if (score > best) { best = score; try { localStorage.setItem('ap-landing-best', String(best)); } catch (e) { /* ignore */ } }
+    const grade = score >= 92 ? 'فرود بی‌نقص!' : score >= 78 ? 'فرود خیلی خوب' : score >= 58 ? 'فرود قابل قبول' : 'فرود ناهموار';
+    if (lsGrade) lsGrade.textContent = grade;
+    if (lsNum) lsNum.textContent = toFa(score);
+    if (lsBest) lsBest.textContent = toFa(best);
+    if (lsFill) lsFill.style.width = score + '%';
+    lsBox.hidden = false;
+    requestAnimationFrame(() => lsBox.classList.add('show'));
+  }
+  function updateLandingScore(p) {
+    if (p > 1 - LS_WINDOW) {
+      if (!lsDone) {
+        const lat = clamp(Math.abs(ox) / 6.5, 0, 1);
+        lsLatAcc += lat; lsSpeedAcc += speedS; lsSamples++;
+        if (p >= 0.999) {
+          lsDone = true;
+          const avgLat = lsSamples ? lsLatAcc / lsSamples : 0;
+          const avgSpeed = lsSamples ? lsSpeedAcc / lsSamples : 0;
+          const score = Math.round(clamp((1 - avgLat) * 0.6 + (1 - avgSpeed) * 0.4, 0, 1) * 100);
+          showLandingScore(score);
+        }
+      }
+    } else if (p < 1 - LS_WINDOW - 0.03) {
+      if (lsDone && lsBox) { lsBox.classList.remove('show'); lsBox.hidden = true; }
+      lsDone = false; lsSamples = 0; lsLatAcc = 0; lsSpeedAcc = 0;
+    }
+  }
 
   function update(p, time, dt) {
     if (!airportLoadTriggered && airportLoadStart >= 0 && p > airportLoadStart) {
@@ -593,10 +628,8 @@ export function startFlight(root, content, opts = {}) {
     /* بلیت‌های شناور، ستون‌ها، چراغ باند */
     for (let i = 0; i < cards.length; i++) { const cm = cards[i]; cm.position.y = cm.userData.by + (reduce ? 0 : Math.sin(time * 0.8 + cm.userData.ph) * 0.4); cm.rotation.z = reduce ? 0 : Math.sin(time * 0.6 + cm.userData.ph) * 0.03; }
     for (let b = 0; b < bars.length; b++) { const u = bars[b].userData; bars[b].scale.y = Math.max(0.01, u.h * smooth(u.t - 150 / L, u.t - 40 / L, p)); u.mat.emissiveIntensity = star * 1.5; }
-    for (let r = 0; r < runwayMats.length; r++) {
-      const on2 = Math.max(0, 1 - Math.abs(((time * 1.6 + runwayMats[r].ph) % 3) - 1.5) / 1.5);
-      runwayMats[r].mat.color.setRGB(0.89 + 0.11 * on2, 0.72 + 0.28 * on2, 0.09 + 0.91 * on2);
-    }
+    runway.update(time, star);
+    updateLandingScore(p);
 
     /* مراحل: فعال‌شدن هر مرحله وقتی هواپیما به ابر آن می‌رسد */
     for (let g = 0; g < stepGroups.length; g++) {
