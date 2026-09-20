@@ -392,9 +392,45 @@ export function startFlight(root, content, opts = {}) {
   });
 
   const maxScroll = () => Math.max(1, (track ? track.offsetHeight : document.documentElement.scrollHeight) - window.innerHeight);
-  const scrollToP = (p) => window.scrollTo({ top: clamp(p, 0, 1) * maxScroll(), behavior: reduce ? 'auto' : 'smooth' });
+  const scrollToP = (p) => window.scrollTo({ top: pToU(p) * maxScroll(), behavior: reduce ? 'auto' : 'smooth' });
   const mids = sections.map((_, i) => sectionRange(i, N).mid);
   const idxOfSection = (id) => sections.findIndex((s) => s.id === id);
+
+  // نگاشت غیرخطی اسکرول: نزدیک وسط هر بخش (جایی که هواپیما باید از کنار/داخل کارت متن رد شود)
+  // پیشرفت کندتر جلو می‌رود تا وقت خواندن باشد؛ بین بخش‌ها دوباره سریع می‌شود. همین «نزدیکی به
+  // وسط بخش» برای کج‌کردن موقت دوربین به سمت کارت هم استفاده می‌شود (پایین‌تر، در حلقه‌ی اصلی).
+  const midSigma = (1 / N) * 0.3;
+  function nearestMidBump(p) {
+    let s = 0;
+    for (let i = 0; i < mids.length; i++) { const d = (p - mids[i]) / midSigma; const b = Math.exp(-d * d); if (b > s) s = b; }
+    return s;
+  }
+  const PACE_STEPS = 480;
+  const paceU = new Float64Array(PACE_STEPS + 1);
+  {
+    let acc = 0;
+    const step = 1 / PACE_STEPS;
+    for (let i = 0; i <= PACE_STEPS; i++) {
+      if (i > 0) { const speed = Math.max(0.22, 1 - 0.72 * nearestMidBump((i - 0.5) * step)); acc += step / speed; }
+      paceU[i] = acc;
+    }
+    const total = paceU[PACE_STEPS] || 1;
+    for (let i = 0; i <= PACE_STEPS; i++) paceU[i] /= total;
+  }
+  function pToU(p) {
+    p = clamp(p, 0, 1);
+    const f = p * PACE_STEPS, i0 = Math.min(PACE_STEPS - 1, Math.floor(f)), t = f - i0;
+    return paceU[i0] + (paceU[i0 + 1] - paceU[i0]) * t;
+  }
+  function uToP(u) {
+    u = clamp(u, 0, 1);
+    let lo = 0, hi = PACE_STEPS;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (paceU[mid] < u) lo = mid + 1; else hi = mid; }
+    if (lo === 0) return 0;
+    const u0 = paceU[lo - 1], u1 = paceU[lo];
+    const t = u1 > u0 ? (u - u0) / (u1 - u0) : 0;
+    return ((lo - 1) + t) / PACE_STEPS;
+  }
   stopEls.forEach((b, i) => on(b, 'click', () => scrollToP(mids[i])));
   root.querySelectorAll('[data-jump]').forEach((b) => on(b, 'click', () => scrollToP(parseFloat(b.dataset.jump))));
   root.querySelectorAll('[data-goto]').forEach((b) => on(b, 'click', (e) => { e.preventDefault(); const i = idxOfSection(b.dataset.goto); if (i >= 0) scrollToP(mids[i]); }));
@@ -442,24 +478,34 @@ export function startFlight(root, content, opts = {}) {
   if (quality === 'low') clouds.setStride(2);
 
   /* ---------- ورودی‌ها ---------- */
-  let target = 0, cur = 0, prevCur = 0, mx = 0, my = 0;
+  let target = 0, cur = 0, prevCur = 0, mx = 0, my = 0, kx = 0;
   const readScroll = () => {
-    target = clamp(window.scrollY / maxScroll(), 0, 1);
+    target = uToP(window.scrollY / maxScroll());
     // نوار بالا فقط باید روی صحنه‌ی سه‌بعدی شناور بماند؛ وقتی فوتر (زیر track) دیده می‌شود باید کنار برود
     if (bar) bar.classList.toggle('bar-hidden', window.scrollY > maxScroll() + 24);
   };
   on(window, 'scroll', readScroll, { passive: true });
   on(window, 'pointermove', (e) => { if (e.pointerType === 'touch') return; mx = clamp((e.clientX / window.innerWidth - 0.5) * 2, -1, 1); my = clamp((e.clientY / window.innerHeight - 0.5) * 2, -1, 1); }, { passive: true });
-  on(window, 'wheel', stopAuto, { passive: true });
   on(window, 'touchstart', stopAuto, { passive: true });
+  // چرخ موس برعکسِ همه‌ی سایت‌هاست: چرخاندن به بالا پرواز را جلو می‌برد، به پایین برمی‌گرداند.
+  // فقط روی ناحیه‌ی خودِ صحنه اثر می‌کند؛ داخل کارت متن یا پنل کابین که اسکرول داخلی دارند دست نمی‌زنیم.
+  on(window, 'wheel', (e) => {
+    stopAuto();
+    if (e.target.closest && e.target.closest('.card, .cockpit, .settings, .landing-score')) return;
+    e.preventDefault();
+    window.scrollBy(0, -e.deltaY);
+  }, { passive: false });
   on(window, 'keydown', (e) => {
     const tag = (e.target && e.target.tagName) || '';
     if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+    if (e.key === 'ArrowLeft') { kx = clamp(kx - 0.55, -1, 1); return; }
+    if (e.key === 'ArrowRight') { kx = clamp(kx + 0.55, -1, 1); return; }
     const p = target;
     let dest = null;
-    if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !/^(BUTTON|A)$/.test(tag))) {
+    // مثل چرخ موس: ↑ جلو می‌برد، ↓ برمی‌گرداند
+    if (e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && !/^(BUTTON|A)$/.test(tag))) {
       dest = mids.find((m) => m > p + 0.012); if (dest === undefined) dest = 1;
-    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+    } else if (e.key === 'ArrowDown' || e.key === 'PageDown') {
       const prev = mids.filter((m) => m < p - 0.012); dest = prev.length ? prev[prev.length - 1] : 0;
     } else if (e.key === 'Home') dest = 0;
     else if (e.key === 'End') dest = 1;
@@ -568,7 +614,8 @@ export function startFlight(root, content, opts = {}) {
 
     /* دینامیک هواپیما: فنر و دمپر پیرو موس، به‌علاوه تلاطم */
     const amp = reduce ? 0 : 0.1 + cloudAmt * 0.5 + speedS * 0.12;
-    const tx = coarse ? Math.sin(time * 0.35) * 2.2 : mx * 6;
+    kx *= Math.exp(-dt * 2.4); // ضربه‌ی کلیدهای چپ/راست کم‌کم فروکش می‌کند
+    const tx = coarse ? Math.sin(time * 0.35) * 2.2 : (mx + kx) * 6;
     const ty = coarse ? Math.sin(time * 0.27 + 1) * 1.1 : -my * 3.4;
     const h = Math.min(dt, 0.05);
     vx += ((tx - ox) * 16 - vx * 6.5) * h; ox += vx * h;
@@ -605,7 +652,11 @@ export function startFlight(root, content, opts = {}) {
       camera.position.y += Math.sin(time * 17.3) * 0.03 * sh;
       camera.position.x += Math.sin(time * 13.1 + 1) * 0.025 * sh;
     }
-    lookT.copy(plane.rig.position).addScaledVector(Tp, 7).addScaledVector(sd, (narrow ? 0 : 3.6) + (coarse ? 0 : mx * 1.0));
+    // درست وسط هر بخش، دوربین کمی برعکس می‌شود تا هواپیما از کنار/داخل کارت متن (که همیشه
+    // آن سمت صفحه ثابت است) عبور کند، نه اینکه همیشه از آن دور بماند
+    const cardPass = narrow ? 0 : nearestMidBump(p);
+    const sideBase = (narrow ? 0 : 3.6) * (1 - cardPass * 2.35);
+    lookT.copy(plane.rig.position).addScaledVector(Tp, 7).addScaledVector(sd, sideBase + (coarse ? 0 : mx * 1.0));
     lookT.y += narrow ? 3.5 : 0.8;
     camera.lookAt(lookT);
     const fov = (narrow ? 74 : 62) + speedS * 6 + cloudAmt * 2;
