@@ -1,0 +1,52 @@
+/* ---------- صفحات ایستا (درباره ما، وبلاگ): از همان متغیرهای رنگی flight.css استفاده می‌کنند ---------- */
+.static-page{background:linear-gradient(180deg,#1a0838,#10032a 55%);min-height:100vh}
+
+.st-bar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px clamp(20px,4vw,48px);background:rgba(20,5,46,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--glass-line)}
+.st-nav{display:flex;gap:24px;font-weight:600;font-size:.95rem}
+.st-nav a{transition:color .2s}
+.st-nav a:hover{color:var(--sun)}
+
+.st-hero{padding:72px clamp(20px,4vw,48px) 50px;text-align:center;max-width:900px;margin-inline:auto}
+.st-hero small{display:inline-block;color:var(--sun);font-weight:700;letter-spacing:.03em;margin-bottom:12px}
+.st-hero h1{font-size:clamp(2.1rem,5vw,3.2rem);font-weight:800;line-height:1.35}
+.st-hero p{margin-top:18px;color:var(--text-dim);font-size:1.05rem;line-height:1.95;max-width:65ch;margin-inline:auto}
+
+.st-section{max-width:1100px;margin-inline:auto;padding:30px clamp(20px,4vw,48px)}
+.st-section h2{font-size:clamp(1.5rem,3vw,2rem);font-weight:800;text-align:center}
+.st-section>p.lead{text-align:center;color:var(--text-dim);max-width:60ch;margin:14px auto 0;line-height:1.9}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:30px}
+.st-card{padding:24px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid var(--glass-line)}
+.st-card h3{font-size:1.05rem;font-weight:700;margin-bottom:10px;color:#fff}
+.st-card p{color:var(--text-dim);line-height:1.85;font-size:.92rem}
+.st-card b{display:block;font-size:1.9rem;color:var(--sun);margin-bottom:6px}
+
+.st-quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:30px}
+.st-quote{padding:22px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid var(--glass-line)}
+.st-quote blockquote{color:#fff;line-height:1.9;font-size:.95rem}
+.st-quote figcaption{margin-top:12px;font-size:.82rem;color:var(--text-dim)}
+
+.st-cta{max-width:820px;margin:50px auto 100px;padding:clamp(28px,4vw,44px);border-radius:28px;background:linear-gradient(135deg,rgba(111,16,211,.4),rgba(228,184,23,.14));border:1px solid var(--glass-line);text-align:center}
+.st-cta h2{font-size:1.5rem;font-weight:800}
+.st-cta p{margin-top:10px;color:var(--text-dim)}
+.st-cta .actions{justify-content:center;margin-top:22px}
+
+/* ---------- وبلاگ ---------- */
+.blog-list{display:grid;gap:18px;max-width:820px;margin:0 auto;padding:40px clamp(20px,4vw,48px) 100px}
+.blog-card{display:block;padding:26px;border-radius:22px;background:rgba(255,255,255,.05);border:1px solid var(--glass-line);transition:border-color .2s,background .2s}
+.blog-card:hover{border-color:var(--sun);background:rgba(255,255,255,.08)}
+.blog-card time{font-size:.8rem;color:var(--text-dim)}
+.blog-card h2{margin-top:8px;font-size:1.25rem;font-weight:800}
+.blog-card p{margin-top:10px;color:var(--text-dim);line-height:1.85}
+.blog-tag{display:inline-block;margin-top:14px;padding:4px 12px;border-radius:999px;background:rgba(228,184,23,.14);color:var(--sun);font-size:.76rem;font-weight:700}
+
+.blog-post{max-width:760px;margin:0 auto;padding:60px clamp(20px,4vw,48px) 40px}
+.blog-post time{color:var(--text-dim);font-size:.85rem}
+.blog-post h1{margin-top:10px;font-size:clamp(1.8rem,4vw,2.5rem);font-weight:800;line-height:1.45}
+.blog-post .lead{margin-top:16px;color:var(--text-dim);font-size:1.05rem;line-height:1.9}
+.blog-post .content{margin-top:30px;line-height:2.05;color:var(--text-dim);display:grid;gap:20px;font-size:1rem}
+.blog-back{display:inline-flex;align-items:center;gap:6px;margin:0 clamp(20px,4vw,48px);color:var(--sun);font-weight:600;padding-top:24px}
+
+@media (max-width:640px){
+  .st-nav{display:none}
+  .st-hero{padding-top:48px}
+}

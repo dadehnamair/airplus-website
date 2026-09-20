@@ -93,7 +93,7 @@
       {
         "title": "منابع",
         "links": [
-          { "label": "وبلاگ", "href": "https://airplus.app/blog/" },
+          { "label": "وبلاگ", "href": "/blog" },
           { "label": "مستندات API", "href": "https://airplus.app/charter-api-documents/" },
           { "label": "بسته‌ها", "href": "https://airplus.app/plans/" }
         ]
@@ -101,6 +101,7 @@
       {
         "title": "شرکت",
         "links": [
+          { "label": "درباره ما", "href": "/about" },
           { "label": "تماس با ما", "href": "https://airplus.app/contact-us/" },
           { "label": "داده‌نما باربد", "href": "https://dadehnamaco.ir" }
         ]

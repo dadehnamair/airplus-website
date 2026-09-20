@@ -210,6 +210,10 @@ export default function Flight({ content }) {
           {LOGO}
           <span className="logo-name">{brand.name}</span>
         </a>
+        <nav className="st-nav bar-nav" aria-label="ناوبری">
+          <a href="/about">درباره ما</a>
+          <a href="/blog">وبلاگ</a>
+        </nav>
         <button className="btn" type="button" {...demoAttr}>درخواست دمو</button>
       </header>
 
