@@ -61,7 +61,7 @@ export function startFlight(root, content, opts = {}) {
   }
   disposers.push(() => document.body.classList.remove('nogl'));
 
-  const api = { toggleSound: async () => false, toggleAuto: () => false, setQuality: () => {}, goto: () => {} };
+  const api = { toggleSound: async () => false, toggleAuto: () => false, toggleLights: () => true, setQuality: () => {}, goto: () => {} };
   const finalize = () => () => { disposed = true; cancelAnimationFrame(raf); disposers.forEach((d) => { try { d(); } catch (e) { /* ignore */ } }); };
 
   /* ---------- renderer ---------- */
@@ -431,6 +431,8 @@ export function startFlight(root, content, opts = {}) {
     else if (!audio.enabled) { audio.enable().then((ok) => onState({ sound: ok })); }
   });
   api.toggleAuto = () => { auto = !auto; autoAcc = 0; return auto; };
+  let lightsOn = true;
+  api.toggleLights = () => { lightsOn = !lightsOn; runway.lights.visible = lightsOn; return lightsOn; };
   api.goto = scrollToP;
   api.setQuality = (q) => {
     quality = q; degraded = false;

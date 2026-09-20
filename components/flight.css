@@ -117,47 +117,53 @@ ol.steps li.on .n{background:var(--sun);border-color:var(--sun);color:var(--navy
 .lf-err{color:#ffb4a8;font-size:.88rem}
 .lf-ok{margin-top:20px;padding:16px;border-radius:16px;background:rgba(74,222,128,.14);border:1px solid rgba(74,222,128,.5);color:#c8f7dc}
 
-/* ---------- کنسول جلوی خلبان: نوار افقی پایین صفحه، شبیه پنل واقعی هواپیما ---------- */
-.cockpit{position:fixed;bottom:16px;inset-inline:0;margin-inline:auto;z-index:20;width:min(980px,94vw);display:flex;align-items:center;gap:16px;padding:11px 20px;border-radius:20px;
-  background:linear-gradient(175deg,#333a4c 0%,#1c2029 55%,#12151c 100%);
-  border:1px solid rgba(255,255,255,.14);border-top-color:rgba(255,255,255,.28);
-  box-shadow:0 26px 60px -24px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.1),inset 0 -14px 22px -18px rgba(0,0,0,.6);
-  overflow-x:auto;scrollbar-width:none}
+/* ---------- کنسول جلوی خلبان: پایین-چپ صفحه، پنل عمودی باریک و بلند، شبیه پنل واقعی هواپیما ---------- */
+.cockpit{position:fixed;bottom:18px;inset-inline-end:clamp(14px,2.2vw,30px);z-index:20;width:236px;max-height:calc(100vh - 100px);display:flex;flex-direction:column;gap:10px;padding:14px 16px 16px;border-radius:18px;
+  background:
+    radial-gradient(circle at 10px 10px,rgba(0,0,0,.55) 1.6px,transparent 2.2px),
+    radial-gradient(circle at calc(100% - 10px) 10px,rgba(0,0,0,.55) 1.6px,transparent 2.2px),
+    radial-gradient(circle at 10px calc(100% - 10px),rgba(0,0,0,.55) 1.6px,transparent 2.2px),
+    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px),rgba(0,0,0,.55) 1.6px,transparent 2.2px),
+    linear-gradient(175deg,#363d4e 0%,#1c2029 50%,#101319 100%);
+  border:1px solid rgba(255,255,255,.14);border-top-color:rgba(255,255,255,.3);
+  box-shadow:0 30px 70px -26px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.1),inset 0 -16px 26px -20px rgba(0,0,0,.65);
+  overflow-y:auto;scrollbar-width:none}
 .cockpit::-webkit-scrollbar{display:none}
-.cp-line{flex:none;width:1px;align-self:stretch;margin:4px 0;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.18) 50%,rgba(255,255,255,0))}
+.cockpit::before{content:"";display:block;flex:none;height:3px;margin:-14px -16px 2px;border-radius:18px 18px 0 0;background:linear-gradient(90deg,var(--sun),#fff6d8 45%,var(--sun))}
+.cp-line{flex:none;height:1px;margin:2px 0;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.18) 50%,rgba(255,255,255,0))}
 
-.hud{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
-.hud-dots{flex:none;display:flex;align-items:center;gap:6px}
-.hud .stop{all:unset;cursor:pointer;display:block;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.3);transition:background .2s,transform .2s,border-color .2s,box-shadow .2s}
+.cp-head{flex:none;display:flex;align-items:center;gap:10px}
+.cp-title{font-size:.8rem;font-weight:700;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:.06em}
+
+.hud{flex:none;display:flex;flex-direction:column;gap:6px}
+.hud-dots{display:flex;align-items:center;gap:6px}
+.hud .stop{all:unset;cursor:pointer;display:block;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.3);transition:background .2s,transform .2s,border-color .2s,box-shadow .2s}
 .hud .stop[aria-current="true"]{background:var(--sun);border-color:var(--sun);transform:scale(1.35);box-shadow:0 0 8px rgba(228,184,23,.85)}
-.hud-label{flex:1;min-width:0;font-size:.8rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-info{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hud-label{min-width:0;font-size:.78rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hud .pct{flex:none;font-size:.72rem;color:var(--text-dim);font-variant-numeric:tabular-nums}
 
-.instr{flex:none;display:flex;gap:8px;font-variant-numeric:tabular-nums}
-.instr>div{background:#04060a;border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:4px 10px;box-shadow:inset 0 0 10px rgba(0,0,0,.7);min-width:56px}
+.instr{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-variant-numeric:tabular-nums}
+.instr>div{background:#04060a;border:1px solid rgba(255,255,255,.12);border-radius:9px;padding:5px 10px;box-shadow:inset 0 0 10px rgba(0,0,0,.7)}
 .instr small{display:block;font-size:.56rem;color:rgba(255,255,255,.42);text-transform:uppercase;letter-spacing:.04em}
 .instr b{font-family:ui-monospace,'Courier New',monospace;font-size:.92rem;font-weight:700;color:#8ff0c0;text-shadow:0 0 7px rgba(143,240,192,.55)}
+.instr .cl{grid-column:1/-1;text-align:center}
 .instr .cl b{color:var(--sun);font-size:.72rem;text-shadow:0 0 7px rgba(228,184,23,.55)}
 
-/* ---------- رادار: هم تزئینی، هم دکمه‌ی باز کردن امکانات ---------- */
-.radar{all:unset;box-sizing:border-box;cursor:pointer;flex:none;display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(24px) scale(.75)}
+.cp-settings{flex:none;display:grid;gap:11px}
+.cp-settings .st-hint{display:none}
+
+/* ---------- رادار: تزئینی، نمادِ زنده بودن پنل ---------- */
+.radar{flex:none;display:flex;align-items:center;opacity:0;transform:translateY(24px) scale(.75)}
 .radar.arrived{opacity:1;transform:none;transition:opacity .9s cubic-bezier(.2,.9,.25,1),transform .9s cubic-bezier(.2,.9,.25,1)}
-.radar:focus-visible{outline:3px solid var(--sun);outline-offset:4px;border-radius:50%}
-.radar-face{position:relative;width:50px;height:50px;flex:none;border-radius:50%;background:radial-gradient(circle,rgba(111,16,211,.32),rgba(16,3,42,.94) 72%);border:1px solid rgba(255,255,255,.18);box-shadow:0 6px 16px -8px rgba(0,0,0,.8),inset 0 0 12px rgba(0,0,0,.55);overflow:hidden;transition:box-shadow .2s}
-.radar:hover .radar-face{box-shadow:0 6px 16px -8px rgba(0,0,0,.8),inset 0 0 12px rgba(0,0,0,.55),0 0 0 2px rgba(228,184,23,.5)}
-.radar-face::before{content:"";position:absolute;inset:6px;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
+.radar-face{position:relative;width:34px;height:34px;flex:none;border-radius:50%;background:radial-gradient(circle,rgba(111,16,211,.32),rgba(16,3,42,.94) 72%);border:1px solid rgba(255,255,255,.18);box-shadow:0 4px 10px -6px rgba(0,0,0,.8),inset 0 0 8px rgba(0,0,0,.55);overflow:hidden}
+.radar-face::before{content:"";position:absolute;inset:4px;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
 .radar-sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(228,184,23,.7),rgba(228,184,23,0) 30%);animation:radar-spin 2.6s linear infinite;mix-blend-mode:screen}
 @keyframes radar-spin{to{transform:rotate(360deg)}}
-.radar-blip{position:absolute;top:50%;left:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:var(--sun);box-shadow:0 0 6px var(--sun);transform:rotate(var(--a)) translate(var(--d));animation:radar-blip 2.6s ease-in-out infinite}
+.radar-blip{position:absolute;top:50%;left:50%;width:3px;height:3px;margin:-1.5px;border-radius:50%;background:var(--sun);box-shadow:0 0 5px var(--sun);transform:rotate(var(--a)) translate(var(--d));animation:radar-blip 2.6s ease-in-out infinite}
 .radar-blip2{animation-delay:.7s}
 .radar-blip3{animation-delay:1.5s}
 @keyframes radar-blip{0%,60%,100%{opacity:.15}78%{opacity:1}}
-.radar small{font-size:.66rem;color:var(--text-dim);letter-spacing:.02em}
-
-.cp-gear{all:unset;box-sizing:border-box;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 14px;border-radius:13px;border:1px solid rgba(255,255,255,.16);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0));font-size:.78rem;color:var(--text-dim);transition:border-color .2s,color .2s}
-.cp-gear:hover{border-color:#fff;color:#fff}
-.cp-gear svg{transition:transform .5s;flex:none}
-.cp-gear[aria-expanded="true"] svg{transform:rotate(90deg)}
 
 /* روی گوشی، جای پنل کامل ابزار، فقط یک دکمه‌ی شناور برای باز کردن امکانات */
 .tools{position:fixed;inset-inline-end:clamp(14px,2.2vw,30px);bottom:22px;z-index:25}
@@ -169,6 +175,8 @@ ol.steps li.on .n{background:var(--sun);border-color:var(--sun);color:var(--navy
 
 .nav-link-btn{all:unset;cursor:pointer;font:inherit;color:inherit;transition:color .2s}
 .nav-link-btn:hover{color:#fff}
+/* در دسکتاپ پنل کابین همیشه باز است، پس این لینک (که فقط پاپ‌آپ را باز می‌کرد) زائد است */
+@media (min-width:961px){ .nav-link-btn{display:none} }
 
 /* ---------- پنل امکانات، از رادار/دکمه‌ی امکانات یا منوی بالا باز می‌شود ---------- */
 .settings{position:fixed;inset-inline:0;margin-inline:auto;bottom:104px;z-index:26;width:min(300px,calc(100vw - 30px));padding:18px;border-radius:22px;border:1px solid var(--glass-line);background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:grid;gap:14px;box-shadow:0 28px 70px -28px rgba(0,0,0,.7)}
