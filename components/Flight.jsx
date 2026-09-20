@@ -178,11 +178,6 @@ export default function Flight({ content }) {
         return (
           <>
             <h2>{s.title}</h2>
-            <div className="landing-score" hidden>
-              <b className="ls-grade" data-k="ls-grade" />
-              <div className="ls-bar"><i data-k="ls-fill" /></div>
-              <small>امتیاز فرود <b data-k="ls-num">۰</b>/۱۰۰ &nbsp;·&nbsp; رکورد <b data-k="ls-best">۰</b></small>
-            </div>
             {s.lead && <p className="lead">{s.lead}</p>}
             {s.formEnabled
               ? <LeadForm />
@@ -243,7 +238,7 @@ export default function Flight({ content }) {
         );
       })}
 
-      {/* پنل ابزار پرواز: مثل جلوی خلبان، مسیر/رادار/اطلاعات پرواز/تنظیمات یک‌جا */}
+      {/* کنسول جلوی خلبان: یک نوار افقی پایین صفحه، رادار/مسیر/اطلاعات پرواز/دکمه‌ی امکانات یک‌جا */}
       <div className="cockpit">
         <button type="button" className="radar" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
           <span className="radar-face">
@@ -258,20 +253,25 @@ export default function Flight({ content }) {
         <div className="cp-line" aria-hidden="true" />
 
         <nav className="hud" aria-label="مسیر پرواز">
-          {sections.map((s) => (
-            <button key={s.id} type="button" className="stop"><span>{s.label}</span><i /></button>
-          ))}
+          <div className="hud-dots">
+            {sections.map((s) => (
+              <button key={s.id} type="button" className="stop" aria-label={s.label} />
+            ))}
+          </div>
+          <small className="hud-label" data-k="hud-label" />
           <div className="pct" />
         </nav>
 
         <div className="cp-line" aria-hidden="true" />
 
         <div className="instr" aria-hidden="true">
-          <div><small>ارتفاع (فوت)</small><b data-k="alt">۰</b></div>
-          <div><small>سرعت (km/h)</small><b data-k="spd">۰</b></div>
+          <div><small>ارتفاع</small><b data-k="alt">۰</b></div>
+          <div><small>سرعت</small><b data-k="spd">۰</b></div>
           <div><small>جهت</small><b data-k="hdg">۰۰۰°</b></div>
           <div className="cl"><b data-k="cloud">دید آزاد</b></div>
         </div>
+
+        <div className="cp-line" aria-hidden="true" />
 
         <button type="button" className="cp-gear" aria-expanded={open} aria-controls="settings" onClick={() => setOpen((v) => !v)}>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg>
@@ -312,6 +312,20 @@ export default function Flight({ content }) {
           <p className="st-hint">با موس هواپیما را هدایت کنید. کلیدهای ↑ و ↓ بین بخش‌ها می‌پرند.</p>
         </div>
       )}
+
+      <div className="landing-score" hidden>
+        <div className="ls-card" role="dialog" aria-label="امتیاز فرود">
+          <b className="ls-grade" data-k="ls-grade" />
+          <div className="ls-num-row"><b data-k="ls-num">۰</b><span>/۱۰۰</span></div>
+          <div className="ls-bar"><i data-k="ls-fill" /></div>
+          <small className="ls-record" data-k="ls-record">رکورد شما ثبت نشده</small>
+          <div className="ls-name-row">
+            <input type="text" className="ls-name" data-k="ls-name" placeholder="اسمتون رو بنویسید" maxLength={18} />
+            <button type="button" className="btn ghost" data-k="ls-save">ثبت رکورد</button>
+          </div>
+          <button type="button" className="ls-close" data-k="ls-close">بستن</button>
+        </div>
+      </div>
 
       <div className="scrollhint" aria-hidden="true">
         <span>اسکرول کنید</span>
