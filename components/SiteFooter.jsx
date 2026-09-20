@@ -1,8 +1,10 @@
 'use client';
 
+import './flight.css';
+
 const isExternal = (h) => /^https?:\/\//.test(h);
 
-export default function SiteFooter({ content }) {
+export default function SiteFooter({ content, isFlightPage = true }) {
   const { brand, sections, footer, contact } = content;
   const link = (l, i) => (
     <li key={i}>
@@ -26,14 +28,16 @@ export default function SiteFooter({ content }) {
           )}
         </div>
 
-        <nav className="sf-col" aria-label="مسیر پرواز">
-          <h3>مسیر پرواز</h3>
-          <ul>
-            {sections.map((s) => (
-              <li key={s.id}><a href="#" data-goto={s.id}>{s.label}</a></li>
-            ))}
-          </ul>
-        </nav>
+        {isFlightPage && (
+          <nav className="sf-col" aria-label="مسیر پرواز">
+            <h3>مسیر پرواز</h3>
+            <ul>
+              {sections.map((s) => (
+                <li key={s.id}><a href="#" data-goto={s.id}>{s.label}</a></li>
+              ))}
+            </ul>
+          </nav>
+        )}
 
         {footer.columns.map((c, i) => (
           <nav className="sf-col" key={i} aria-label={c.title}>
@@ -56,22 +60,31 @@ export default function SiteFooter({ content }) {
         <span>{footer.copyright}</span>
         {footer.credit && <span>{footer.credit}</span>}
         {footer.legal.length > 0 && <ul className="sf-legal">{footer.legal.map(link)}</ul>}
-        <button type="button" className="sf-top" data-jump="0">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
-          پرواز دوباره
-        </button>
+        {isFlightPage ? (
+          <button type="button" className="sf-top" data-jump="0">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+            پرواز دوباره
+          </button>
+        ) : (
+          <a href="/" className="sf-top">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+            بازگشت به صفحه اصلی
+          </a>
+        )}
       </div>
 
-      <p className="sf-credits">
-        مدل سه‌بعدی هواپیما: «Airbus A320-200 V2» اثر{' '}
-        <a href="https://sketchfab.com/fDlruosne" target="_blank" rel="noopener noreferrer">Dlourine</a>{' '}
-        (<a href="https://sketchfab.com/3d-models/airbus-a320-200-v2-c078f9af15884a6b820c7e778831b110" target="_blank" rel="noopener noreferrer">Sketchfab</a>)
-        با مجوز <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>؛ با تغییر رنگ و ساده‌سازی برای این سایت.
-        {' '}مدل سه‌بعدی فرودگاه: «Airport City Scene with Aeroplane Runway Track» اثر{' '}
-        <a href="https://sketchfab.com/mortalityrexotable" target="_blank" rel="noopener noreferrer">golukumar</a>{' '}
-        (<a href="https://sketchfab.com/3d-models/airport-city-scene-with-aeroplane-runway-track-dac0622298b94c7d9673047f2d86803b" target="_blank" rel="noopener noreferrer">Sketchfab</a>)
-        با مجوز خریداری‌شده؛ با حذف اشیای زائد و مقیاس‌دهی برای این سایت.
-      </p>
+      {isFlightPage && (
+        <p className="sf-credits">
+          مدل سه‌بعدی هواپیما: «Airbus A320-200 V2» اثر{' '}
+          <a href="https://sketchfab.com/fDlruosne" target="_blank" rel="noopener noreferrer">Dlourine</a>{' '}
+          (<a href="https://sketchfab.com/3d-models/airbus-a320-200-v2-c078f9af15884a6b820c7e778831b110" target="_blank" rel="noopener noreferrer">Sketchfab</a>)
+          با مجوز <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>؛ با تغییر رنگ و ساده‌سازی برای این سایت.
+          {' '}مدل سه‌بعدی فرودگاه: «Airport City Scene with Aeroplane Runway Track» اثر{' '}
+          <a href="https://sketchfab.com/mortalityrexotable" target="_blank" rel="noopener noreferrer">golukumar</a>{' '}
+          (<a href="https://sketchfab.com/3d-models/airport-city-scene-with-aeroplane-runway-track-dac0622298b94c7d9673047f2d86803b" target="_blank" rel="noopener noreferrer">Sketchfab</a>)
+          با مجوز خریداری‌شده؛ با حذف اشیای زائد و مقیاس‌دهی برای این سایت.
+        </p>
+      )}
     </footer>
   );
 }

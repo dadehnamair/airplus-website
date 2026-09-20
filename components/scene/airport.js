@@ -35,13 +35,35 @@ export function createAirport(opts = {}) {
 
           const box = new THREE.Box3().setFromObject(root);
           const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
           // مرکز مدل (پیش از مقیاس‌دهی) روی محور افقی و کف روی y=۰
           root.position.set(-center.x, -box.min.y, -center.z);
+
+          // بدون نور اختصاصی، شب‌ها یک حجم کاملاً تیره و بی‌جزئیات دیده می‌شد؛
+          // چند چراغ گرم مثل نورافکن‌های واقعی فرودگاه، حجم و پنجره‌ها را نمایان می‌کند
+          root.traverse((o) => {
+            if (o.isMesh && o.material && o.material.emissiveMap) {
+              o.material.emissiveIntensity = 2.2;
+            }
+          });
 
           const wrapper = new THREE.Group();
           wrapper.scale.setScalar(scale);
           wrapper.add(root);
           group.add(wrapper);
+
+          // نور در ارتفاع نمای ساختمان (نه فقط بالای سر) تا نما و حجم دیده شود، نه فقط پشت‌بام
+          const floodColor = 0xfff3d6;
+          const reach = Math.max(size.x, size.y, size.z) * 2.2;
+          const faceY = size.y * 0.65;
+          const flood1 = new THREE.PointLight(floodColor, 9, reach, 1);
+          flood1.position.set(size.x * 0.2, faceY, size.z * 0.55);
+          const flood2 = new THREE.PointLight(floodColor, 7, reach, 1);
+          flood2.position.set(-size.x * 0.35, faceY, -size.z * 0.35);
+          const flood3 = new THREE.PointLight(0xdce8ff, 5, reach, 1);
+          flood3.position.set(size.x * 0.1, size.y * 1.4, -size.z * 0.1);
+          wrapper.add(flood1, flood2, flood3);
+
           group.visible = true;
           resolve(true);
         },

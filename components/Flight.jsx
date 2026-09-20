@@ -21,12 +21,7 @@ function parseStat(v) {
   return { pre: str.slice(0, m.index), suf: str.slice(m.index + m[0].length), num, group: /[٬,]/.test(m[0]) };
 }
 
-const LOGO = (
-  <svg viewBox="0 0 34 34" aria-hidden="true">
-    <rect width="34" height="34" rx="9" fill="#e4b817" />
-    <path className="plus" d="M15 7h4v8h8v4h-8v8h-4v-8H7v-4h8z" fill="#6f10d3" />
-  </svg>
-);
+const LOGO = <img src="/icon/icon-192.png" alt="" className="logo-mark" aria-hidden="true" />;
 
 export default function Flight({ content }) {
   const rootRef = useRef(null);
@@ -46,7 +41,13 @@ export default function Flight({ content }) {
     let q = 'auto';
     try { q = localStorage.getItem('ap-quality') || 'auto'; } catch (e) { /* ignore */ }
     setQuality(q);
-    const inst = startFlight(rootRef.current, content, { quality: q, onState: (s) => { if (s.auto === false) setAuto(false); } });
+    const inst = startFlight(rootRef.current, content, {
+      quality: q,
+      onState: (s) => {
+        if (s.auto === false) setAuto(false);
+        if (typeof s.sound === 'boolean') setSound(s.sound);
+      },
+    });
     apiRef.current = inst.api;
     return () => { apiRef.current = null; inst.dispose(); };
   }, [content]);
@@ -209,6 +210,10 @@ export default function Flight({ content }) {
           {LOGO}
           <span className="logo-name">{brand.name}</span>
         </a>
+        <nav className="st-nav bar-nav" aria-label="ناوبری">
+          <a href="/about">درباره ما</a>
+          <a href="/blog">وبلاگ</a>
+        </nav>
         <button className="btn" type="button" {...demoAttr}>درخواست دمو</button>
       </header>
 
@@ -235,6 +240,16 @@ export default function Flight({ content }) {
         <div><small>سرعت (km/h)</small><b data-k="spd">۰</b></div>
         <div><small>جهت</small><b data-k="hdg">۰۰۰°</b></div>
         <div className="cl"><b data-k="cloud">دید آزاد</b></div>
+      </div>
+
+      <div className="radar" aria-hidden="true">
+        <div className="radar-face">
+          <i className="radar-sweep" />
+          <i className="radar-blip" style={{ '--a': '35deg', '--d': '17px' }} />
+          <i className="radar-blip radar-blip2" style={{ '--a': '160deg', '--d': '23px' }} />
+          <i className="radar-blip radar-blip3" style={{ '--a': '270deg', '--d': '13px' }} />
+        </div>
+        <small>رادار</small>
       </div>
 
       <div className="tools">
