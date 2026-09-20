@@ -223,7 +223,11 @@ export function startFlight(root, content, opts = {}) {
     const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4;
     brandSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false, opacity: 0 }));
     brandSprite.scale.set(96, 39, 1); brandSprite.renderOrder = 8;
-    frame3(sectionRange(heroIdx, N).start + 135 / L);
+    // بعد از محو کامل کارت برخاست جا می‌گیرد، نه وسط آن؛ چون کارت برخاست حالا کل عرض صفحه را
+    // می‌گیرد و تا محو نشود همیشه رویش می‌افتد
+    const heroRange = sectionRange(heroIdx, N);
+    const heroFadeF = Math.min(0.03, 0.15 / N);
+    frame3(Math.min(1, heroRange.b + heroFadeF + 0.05));
     brandSprite.position.set(tmpP.x + sideV.x * -6, tmpP.y + 7, tmpP.z + sideV.z * -6);
     scene.add(brandSprite);
   }
@@ -724,15 +728,17 @@ export function startFlight(root, content, opts = {}) {
       if (act !== sg.last) { sg.last = act; sg.lis.forEach((li, i) => li.classList.toggle('on', i === act)); }
     }
 
-    /* پنل‌های متن */
+    /* پنل‌های متن: انگار خودِ کارت هم مثل برند در آسمان یک جسم شناور است که با نزدیک شدن
+       هواپیما بزرگ‌تر می‌شود و با گذشتن از آن محو/کوچک می‌شود، نه یک باکس ثابت روی صحنه */
     for (let n = 0; n < panels.length; n++) {
       const pn = panels[n], f = Math.min(0.03, 0.15 / N);
       const o = smooth(pn.a - f, pn.a, p) * (1 - smooth(pn.b, pn.b + f, p));
       const mid = (Math.max(pn.a, -0.1) + Math.min(pn.b, 1.1)) / 2;
       const off = (1 - o) * 30 * (p < mid ? 1 : -1);
+      const scale = reduce ? 1 : 0.6 + 0.52 * o;
       pn.el.style.opacity = o.toFixed(3);
       pn.el.style.visibility = o > 0.02 ? 'visible' : 'hidden';
-      pn.card.style.transform = 'translateY(' + off.toFixed(1) + 'px)';
+      pn.card.style.transform = 'translateY(' + off.toFixed(1) + 'px) scale(' + scale.toFixed(3) + ')';
       pn.card.style.pointerEvents = o > 0.6 ? 'auto' : 'none';
     }
     for (let s = 0; s < stats.length; s++) {
