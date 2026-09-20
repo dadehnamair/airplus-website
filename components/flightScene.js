@@ -400,9 +400,12 @@ export function startFlight(root, content, opts = {}) {
   // پیشرفت کندتر جلو می‌رود تا وقت خواندن باشد؛ بین بخش‌ها دوباره سریع می‌شود. همین «نزدیکی به
   // وسط بخش» برای کج‌کردن موقت دوربین به سمت کارت هم استفاده می‌شود (پایین‌تر، در حلقه‌ی اصلی).
   const midSigma = (1 / N) * 0.3;
-  function nearestMidBump(p) {
+  function nearestMidBump(p, excludeIdx = -1) {
     let s = 0;
-    for (let i = 0; i < mids.length; i++) { const d = (p - mids[i]) / midSigma; const b = Math.exp(-d * d); if (b > s) s = b; }
+    for (let i = 0; i < mids.length; i++) {
+      if (i === excludeIdx) continue;
+      const d = (p - mids[i]) / midSigma; const b = Math.exp(-d * d); if (b > s) s = b;
+    }
     return s;
   }
   const PACE_STEPS = 480;
@@ -647,7 +650,11 @@ export function startFlight(root, content, opts = {}) {
     // (که همیشه آن سمت صفحه ثابت است) عبور کند، نه اینکه همیشه از آن دور بماند. هم موقعیت خودِ
     // دوربین و هم نقطه‌ی نگاهش جابه‌جا می‌شود، وگرنه قدرت این افکت به فاز تصادفیِ پیچ‌و‌خم مسیر در
     // هر بخش بستگی پیدا می‌کند و مثلاً در بخش اول (برخاست) تقریباً دیده نمی‌شد.
-    const cardPass = narrow ? 0 : nearestMidBump(p);
+    // کارت «برخاست» کنار صفحه نیست، وسط است (مثل متن برند در آسمان)؛ آنجا اصلاً نباید به کنار
+    // سُر بخورد، دوربین باید صاف روی هواپیما بماند تا از وسط خودِ کارت رد شود.
+    const heroMidD = heroIdx >= 0 ? (p - mids[heroIdx]) / midSigma : Infinity;
+    const heroPass = narrow ? 0 : Math.exp(-heroMidD * heroMidD);
+    const cardPass = narrow ? 0 : nearestMidBump(p, heroIdx) * (1 - heroPass);
     camera.position.set(
       camPos.x + sd.x * (ox * 0.28 - cardPass * 3.4),
       camPos.y + 3.6 + oy * 0.22,
@@ -657,7 +664,7 @@ export function startFlight(root, content, opts = {}) {
       camera.position.y += Math.sin(time * 17.3) * 0.03 * sh;
       camera.position.x += Math.sin(time * 13.1 + 1) * 0.025 * sh;
     }
-    const sideBase = (narrow ? 0 : 3.6) * (1 - cardPass * 2.6);
+    const sideBase = (narrow ? 0 : 3.6) * (1 - heroPass) * (1 - cardPass * 2.6);
     lookT.copy(plane.rig.position).addScaledVector(Tp, 7).addScaledVector(sd, sideBase + (coarse ? 0 : mx * 1.0));
     lookT.y += narrow ? 3.5 : 0.8;
     camera.lookAt(lookT);
