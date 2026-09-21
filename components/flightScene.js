@@ -79,11 +79,25 @@ export function startFlight(root, content, opts = {}) {
     return { dispose: finalize(), api };
   }
 
+  // کانواس دومِ شفاف، بالای کارت‌های متن: هر فریم فقط هواپیما (و دنباله‌اش) با همان
+  // دوربینِ اصلی رویش کشیده می‌شود تا هواپیما واقعاً از روی کارت رد شود/داخلش برود
+  const canvasGhost = document.createElement('canvas');
+  canvasGhost.className = 'gl-plane';
+  canvasGhost.setAttribute('aria-hidden', 'true');
+  root.appendChild(canvasGhost);
+  disposers.push(() => canvasGhost.remove());
+  let rendererGhost = null;
+  try {
+    rendererGhost = new THREE.WebGLRenderer({ canvas: canvasGhost, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    rendererGhost.setClearColor(0x000000, 0);
+  } catch (e) { rendererGhost = null; }
+
   let quality = opts.quality || 'auto';
   let degraded = false;
   const dprCap = () => (quality === 'low' || degraded ? 1 : Math.min(window.devicePixelRatio || 1, 2));
   renderer.setPixelRatio(dprCap());
   renderer.setSize(window.innerWidth, window.innerHeight);
+  if (rendererGhost) { rendererGhost.setPixelRatio(dprCap()); rendererGhost.setSize(window.innerWidth, window.innerHeight); }
 
   const FONT = getComputedStyle(root).fontFamily || 'Tahoma, sans-serif';
   const V = THREE.Vector3;
@@ -204,6 +218,7 @@ export function startFlight(root, content, opts = {}) {
   const TRAIL = 44;
   const trailSys = createPuffSystem(atlas, TRAIL * 2, { toneAlpha: true, near0: 3, near1: 12, renderOrder: 6, opacity: 0.85 });
   scene.add(trailSys.mesh);
+  const ghostKeep = new Set([plane.rig, trailSys.mesh, hemi, dir]);
   const trailRot = Array.from({ length: TRAIL * 2 }, () => ({ r: rand() * 6.28, t: Math.floor(rand() * 4) }));
   const chains = [0, 1].map(() => Array.from({ length: TRAIL }, () => new V()));
   const engW = new V(), off0 = new V();
@@ -480,7 +495,9 @@ export function startFlight(root, content, opts = {}) {
   api.setQuality = (q) => {
     quality = q; degraded = false;
     clouds.setStride(q === 'low' ? 2 : 1);
-    renderer.setPixelRatio(dprCap()); onResize();
+    renderer.setPixelRatio(dprCap());
+    if (rendererGhost) rendererGhost.setPixelRatio(dprCap());
+    onResize();
   };
   if (quality === 'low') clouds.setStride(2);
 
@@ -520,6 +537,7 @@ export function startFlight(root, content, opts = {}) {
   });
   const onResize = () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
+    if (rendererGhost) rendererGhost.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
   };
   on(window, 'resize', onResize); onResize();
@@ -781,10 +799,22 @@ export function startFlight(root, content, opts = {}) {
     update(cur, time, dt);
     renderer.render(scene, camera);
 
+    if (rendererGhost) {
+      const hidden = [];
+      for (let i = 0; i < scene.children.length; i++) {
+        const ch = scene.children[i];
+        if (!ghostKeep.has(ch) && ch.visible) { ch.visible = false; hidden.push(ch); }
+      }
+      rendererGhost.render(scene, camera);
+      for (let i = 0; i < hidden.length; i++) hidden[i].visible = true;
+    }
+
     // کیفیت خودکار: اگر سیستم کند بود، تراکم ابر و دقت تصویر را کم می‌کنیم
     avg += (dt * 1000 - avg) * 0.05;
     if (quality === 'auto' && !degraded && frameNo > 120 && avg > 32) {
-      degraded = true; clouds.setStride(2); renderer.setPixelRatio(dprCap()); onResize();
+      degraded = true; clouds.setStride(2); renderer.setPixelRatio(dprCap());
+      if (rendererGhost) rendererGhost.setPixelRatio(dprCap());
+      onResize();
     }
     raf = requestAnimationFrame(loop);
   }
@@ -815,6 +845,7 @@ export function startFlight(root, content, opts = {}) {
       });
     });
     clouds.dispose(); atlas.dispose(); renderer.dispose();
+    if (rendererGhost) rendererGhost.dispose();
   });
 
   return { dispose: finalize(), api };
